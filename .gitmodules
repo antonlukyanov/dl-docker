@@ -1,0 +1,3 @@
+[submodule "deepo"]
+	path = deepo
+	url = git@github.com:antonlukyanov/deepo.git
