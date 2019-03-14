@@ -19,4 +19,3 @@ nvidia-docker run \
         --LabApp.token=dgxtoken
 
 docker exec -d adl-jupyterlab sudo /usr/sbin/sshd -D
-
