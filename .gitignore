@@ -1,0 +1,10 @@
+# Python compiled files.
+__pycache__/
+*.py[cod]
+*$py.class
+
+# PyCharm.
+.idea/
+
+# virtualenv.
+.venv/
