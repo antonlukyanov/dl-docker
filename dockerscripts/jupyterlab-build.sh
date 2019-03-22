@@ -3,14 +3,14 @@
 prefix=$1
 user=$2
 
-if [ "$USER" == "a.lukyanov1" ]; then
+if [[ "$USER" == "a.lukyanov1" ]]; then
     user=anton
     prefix=adl
-elif [ -z "$user" ]; then
+elif [[ -z "$user" ]]; then
     user=$(whoami)
 fi
 
-if [ -z "$prefix" ]; then
+if [[ -z "$prefix" ]]; then
     echo "You must specify a prefix (as the first argument) which is used for your image tag: \$prefix/jupyterlab:gpu."
     echo "For example, running './jupyterlab-gpu adl' will build an image with the tag adl/jupyterlab:gpu."
     exit
