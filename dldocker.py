@@ -211,15 +211,15 @@ nvidia-docker run \\
         ''')
         self._run(f'docker exec -d {cfg.LAB_CONTAINER_NAME} /usr/sbin/sshd -D')
 
-    def run_it(self, command=None):
+    def run_it_rm(self, command=None):
         cfg = self.config
         self._run(f'''
 nvidia-docker run \\
     -it \\
+    --rm \\
     -e DLD_UID=$(id -u) \\
     -e DLD_GID=$(id -u) \\
     --hostname dgx1 \\
-    --name {cfg.LAB_CONTAINER_NAME} \\
     -v {cfg.MOUNT} \\
     --ipc host \\
     {cfg.LAB_IMAGE_NAME} \\
@@ -272,8 +272,8 @@ def main(args):
         cmdo.build()
     elif cmd == 'run-jl':
         cmdo.run_jl()
-    elif cmd == 'run-it':
-        cmdo.run_it(args.container_command)
+    elif cmd == 'run-it-rm':
+        cmdo.run_it_rm(args.container_command)
     elif cmd == 'start':
         cmdo.start()
     elif cmd == 'stop':
