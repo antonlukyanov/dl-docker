@@ -84,31 +84,39 @@ def parse_args():
 
     parser_build = parser_cmd.add_parser(
         'build',
-        description='Build image.'
+        description='Builds image.'
     )
-    parser_run = parser_cmd.add_parser(
-        'run',
-        description='Run new container.'
+    parser_run_jl = parser_cmd.add_parser(
+        'run-jl',
+        description='Runs a new container and jupyterlab with sshd.'
+    )
+    parser_run_it = parser_cmd.add_parser(
+        'run-it',
+        description='Interactively runs specified command in a new container.'
+    )
+    parser_run_it.add_argument(
+        'container_command',
+        nargs='?'
     )
     parser_rmc = parser_cmd.add_parser(
         'rmc',
-        description='Remove container.'
+        description='Removes container.'
     )
     parser_rmi = parser_cmd.add_parser(
         'rmi',
-        description='Remove image.'
+        description='Removes image.'
     )
     parser_start = parser_cmd.add_parser(
         'start',
-        description='Start existing container.'
+        description='Starts existing container.'
     )
     parser_stop = parser_cmd.add_parser(
         'stop',
-        description='Stop running container.'
+        description='Stops running container.'
     )
     parser_exec = parser_cmd.add_parser(
         'exec',
-        description='Execute command in a running container. Default command is bash.'
+        description='Executes command in a running container. Default command is bash.'
     )
     parser_exec.add_argument(
         'container_command',
@@ -151,7 +159,7 @@ docker build \\
     dockercontext
         ''')
 
-    def run(self):
+    def run_jl(self):
         cfg = self.config
         self._run(f'''
 nvidia-docker run \\
@@ -174,6 +182,21 @@ nvidia-docker run \\
         --LabApp.token=dgxtoken
 
 docker exec -d {cfg.LAB_CONTAINER_NAME} sudo /usr/sbin/sshd -D \\
+        ''')
+
+    def run_it(self, command):
+        cfg = self.config
+        self._run(f'''
+nvidia-docker run \\
+    -it \\
+    -e DLD_UID=$(id -u) \\
+    -e DLD_GID=$(id -u) \\
+    --hostname dgx1 \\
+    --name {cfg.LAB_CONTAINER_NAME} \\
+    -v {cfg.MOUNT} \\
+    --ipc host \\
+    {cfg.LAB_IMAGE_NAME} \\
+    {command}
         ''')
 
     def start(self):
@@ -206,18 +229,19 @@ Mount: {cfg.MOUNT}
 Notebook dir: {cfg.NOTEBOOK_DIR}
         '''.strip())
 
-    def exec(self, container_command=None):
-        cmd = container_command or 'bash'
-        run(f'docker exec -it {self.config.LAB_CONTAINER_NAME} sudo -u master {cmd}')
+    def exec(self, command=None):
+        run(f'docker exec -it {self.config.LAB_CONTAINER_NAME} sudo -u master {command or "bash"}')
 
 
 def main(args):
     cmd = args.command
     cmdo = Command(process_config(importlib.import_module('configs.' + args.config)), args.dry_run)
-    if cmd in ('build', 'b'):
+    if cmd == 'build':
         cmdo.build()
-    elif cmd in ('run', 'r'):
-        cmdo.run()
+    elif cmd == 'run-jl':
+        cmdo.run_jl()
+    elif cmd == 'run-it':
+        cmdo.run_it(args.container_command)
     elif cmd == 'start':
         cmdo.start()
     elif cmd == 'stop':
