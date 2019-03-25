@@ -22,7 +22,7 @@ def log(msg, file=None, time_prefix=True):
 
 
 def list_configs():
-    return [x.replace('.sh', '') for x in os.listdir(join('configs')) if x.endswith('.py')]
+    return [x.replace('.py', '') for x in os.listdir(join('configs')) if x.endswith('.py')]
 
 
 def process_config(config):
@@ -82,13 +82,38 @@ def parse_args():
     parser_cmd = parser.add_subparsers(dest='command')
     parser_cmd.required = True
 
-    parser_build = parser_cmd.add_parser('build', aliases=['b'])
-    parser_run = parser_cmd.add_parser('run', aliases=['r'])
-    parser_rmc = parser_cmd.add_parser('rmc')
-    parser_rmi = parser_cmd.add_parser('rmi')
-    parser_start = parser_cmd.add_parser('start')
-    parser_stop = parser_cmd.add_parser('stop')
-    parser_exec = parser_cmd.add_parser('exec')
+    parser_build = parser_cmd.add_parser(
+        'build',
+        description='Build image.'
+    )
+    parser_run = parser_cmd.add_parser(
+        'run',
+        description='Run new container.'
+    )
+    parser_rmc = parser_cmd.add_parser(
+        'rmc',
+        description='Remove container.'
+    )
+    parser_rmi = parser_cmd.add_parser(
+        'rmi',
+        description='Remove image.'
+    )
+    parser_start = parser_cmd.add_parser(
+        'start',
+        description='Start existing container.'
+    )
+    parser_stop = parser_cmd.add_parser(
+        'stop',
+        description='Stop running container.'
+    )
+    parser_exec = parser_cmd.add_parser(
+        'exec',
+        description='Execute command in a running container. Default command is bash.'
+    )
+    parser_exec.add_argument(
+        'container_command',
+        nargs='?'
+    )
     parser_info = parser_cmd.add_parser('info')
 
     return parser.parse_args()
@@ -181,9 +206,9 @@ Mount: {cfg.MOUNT}
 Notebook dir: {cfg.NOTEBOOK_DIR}
         '''.strip())
 
-    def exec(self):
-        cfg = self.config
-        run(f'docker exec -it {cfg.LAB_CONTAINER_NAME} sudo -u master bash')
+    def exec(self, container_command=None):
+        cmd = container_command or 'bash'
+        run(f'docker exec -it {self.config.LAB_CONTAINER_NAME} sudo -u master {cmd}')
 
 
 def main(args):
@@ -200,7 +225,7 @@ def main(args):
     elif cmd == 'rmc':
         cmdo.rmc()
     elif cmd == 'exec':
-        cmdo.exec()
+        cmdo.exec(args.container_command)
     elif cmd == 'info':
         cmdo.info()
 
