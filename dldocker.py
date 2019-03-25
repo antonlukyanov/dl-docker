@@ -184,7 +184,7 @@ nvidia-docker run \\
 docker exec -d {cfg.LAB_CONTAINER_NAME} sudo /usr/sbin/sshd -D \\
         ''')
 
-    def run_it(self, command):
+    def run_it(self, command=None):
         cfg = self.config
         self._run(f'''
 nvidia-docker run \\
@@ -196,7 +196,7 @@ nvidia-docker run \\
     -v {cfg.MOUNT} \\
     --ipc host \\
     {cfg.LAB_IMAGE_NAME} \\
-    {command}
+    {command or "bash"}
         ''')
 
     def start(self):
