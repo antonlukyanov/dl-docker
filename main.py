@@ -28,16 +28,20 @@ def list_configs():
 def process_config(config):
     whoami = run('whoami', stdout=subprocess.PIPE).stdout.strip() or ''
 
-    config.DEEPO_IMAGE_NAME = config.DEEPO_IMAGE_NAME or \
-        f'{config.IMAGE_PREFIX}/deepo-{config.IMAGE_SUFFIX}:gpu'
+    base_image_suffix = '-' + config.BASE_IMAGE_SUFFIX if config.BASE_IMAGE_SUFFIX else ''
+
+    config.BASE_IMAGE_NAME = config.BASE_IMAGE_NAME or \
+        f'{config.IMAGE_PREFIX}/base{base_image_suffix}:gpu'
 
     config.CONTAINER_PREFIX = whoami if whoami != 'a.lukyanov1' else 'adl'
 
+    lab_image_suffix = '-' + config.LAB_IMAGE_SUFFIX if config.LAB_IMAGE_SUFFIX else ''
+
     config.LAB_IMAGE_NAME = config.LAB_IMAGE_NAME or \
-        f'{config.IMAGE_PREFIX}/lab-{config.IMAGE_SUFFIX}:gpu'
+        f'{config.IMAGE_PREFIX}/lab{lab_image_suffix}:gpu'
 
     config.LAB_CONTAINER_NAME = config.LAB_CONTAINER_NAME or \
-        f'{config.CONTAINER_PREFIX}-lab-{config.IMAGE_SUFFIX}'
+        f'{config.CONTAINER_PREFIX}-lab{lab_image_suffix}'
 
     config.NOTEBOOK_DIR = config.NOTEBOOK_DIR or \
         '/workspace/projects'
@@ -84,6 +88,7 @@ def parse_args():
     parser_rmi = parser_cmd.add_parser('rmi')
     parser_start = parser_cmd.add_parser('start')
     parser_stop = parser_cmd.add_parser('stop')
+    parser_exec = parser_cmd.add_parser('exec')
     parser_info = parser_cmd.add_parser('info')
 
     return parser.parse_args()
@@ -94,7 +99,7 @@ class Command:
         self.config = config
         self.dry_run = dry_run
 
-    def exec(self, cmd):
+    def _run(self, cmd):
         cmd = cmd.strip()
         log(f'running:\n{cmd}')
         if not self.dry_run:
@@ -105,17 +110,17 @@ class Command:
         cfg = self.config
 
         if cfg.DOCKERFILE_BASE:
-            self.exec(f'''
+            self._run(f'''
 docker build \\
     -f dockerfiles/{cfg.DOCKERFILE_BASE} \\
-    -t {cfg.DEEPO_IMAGE_NAME} \\
+    -t {cfg.BASE_IMAGE_NAME} \\
     dockercontext
             ''')
 
-        self.exec(f'''
+        self._run(f'''
 docker build \\
-    -f dockerfiles/Lab \\
-    --build-arg DLD_DEEPO={cfg.DEEPO_IMAGE_NAME} \\
+    -f dockerfiles/{cfg.DOCKERFILE_LAB} \\
+    --build-arg DLD_BASE={cfg.BASE_IMAGE_NAME} \\
     --build-arg DLD_USER={cfg.IMAGE_USER} \\
     -t {cfg.LAB_IMAGE_NAME} \\
     dockercontext
@@ -123,58 +128,62 @@ docker build \\
 
     def run(self):
         cfg = self.config
-        self.exec(f'''
-nvidia-docker run \
-    -d \
-    -e DLD_UID=$(id -u) \
-    -e DLD_GID=$(id -u) \
-    --hostname dgx1 \
-    --name {cfg.LAB_CONTAINER_NAME} \
-    -v {cfg.MOUNT} \
-    -p 8889:8888 \
-    -p 8890:22 \
-    -p 8899:6006 \
-    --ipc host \
-    {cfg.LAB_IMAGE_NAME} \
-    jupyter lab \
-        --ip 0.0.0.0 \
-        --allow-root \
-        --no-browser \
-        --notebook-dir={cfg.NOTEBOOK_DIR} \
+        self._run(f'''
+nvidia-docker run \\
+    -d \\
+    -e DLD_UID=$(id -u) \\
+    -e DLD_GID=$(id -u) \\
+    --hostname dgx1 \\
+    --name {cfg.LAB_CONTAINER_NAME} \\
+    -v {cfg.MOUNT} \\
+    -p 8889:8888 \\
+    -p 8890:22 \\
+    -p 8899:6006 \\
+    --ipc host \\
+    {cfg.LAB_IMAGE_NAME} \\
+    jupyter lab \\
+        --ip 0.0.0.0 \\
+        --allow-root \\
+        --no-browser \\
+        --notebook-dir={cfg.NOTEBOOK_DIR} \\
         --LabApp.token=dgxtoken
 
-docker exec -d {cfg.LAB_CONTAINER_NAME} sudo /usr/sbin/sshd -D\
+docker exec -d {cfg.LAB_CONTAINER_NAME} sudo /usr/sbin/sshd -D \\
         ''')
 
     def start(self):
         cfg = self.config
-        self.exec(f'''
+        self._run(f'''
 nvidia-docker start {cfg.LAB_CONTAINER_NAME}
 docker exec -d {cfg.LAB_CONTAINER_NAME} sudo /usr/sbin/sshd -D
         ''')
 
     def stop(self):
-        self.exec(f'docker stop {self.config.LAB_CONTAINER_NAME}')
+        self._run(f'docker stop {self.config.LAB_CONTAINER_NAME}')
 
     def rmc(self):
-        self.exec(f'docker rm {self.config.LAB_CONTAINER_NAME}')
+        self._run(f'docker rm {self.config.LAB_CONTAINER_NAME}')
 
     def rmi(self):
         cfg = self.config
-        self.exec(f'''
+        self._run(f'''
 docker rmi ${cfg.LAB_IMAGE_NAME}
-docker rmi ${cfg.DEEPO_IMAGE_NAME}
+docker rmi ${cfg.BASE_IMAGE_NAME}
         ''')
 
     def info(self):
         cfg = self.config
         print(f'''
-Deepo image: {cfg.DEEPO_IMAGE_NAME}
+Base image: {cfg.BASE_IMAGE_NAME}
 Lab image: {cfg.LAB_IMAGE_NAME}
 Lab container: {cfg.LAB_CONTAINER_NAME}
 Mount: {cfg.MOUNT}
 Notebook dir: {cfg.NOTEBOOK_DIR}
         '''.strip())
+
+    def exec(self):
+        cfg = self.config
+        run(f'docker exec -it {cfg.LAB_CONTAINER_NAME} sudo -u master bash')
 
 
 def main(args):
@@ -190,6 +199,8 @@ def main(args):
         cmdo.stop()
     elif cmd == 'rmc':
         cmdo.rmc()
+    elif cmd == 'exec':
+        cmdo.exec()
     elif cmd == 'info':
         cmdo.info()
 

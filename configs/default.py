@@ -6,14 +6,19 @@
 DOCKERFILE_BASE = 'Deepo-py37-cu10'
 DOCKERFILE_LAB = 'Lab-tf1x'
 
-# Resulting names after build. Automatically generated if set to None.
-DEEPO_IMAGE_NAME = None
-LAB_IMAGE_NAME = None
-LAB_CONTAINER_NAME = None
-
 # Prefixes and suffixes for automatic names generation.
 IMAGE_PREFIX = 'dld'
-IMAGE_SUFFIX = 'tf2x'
+
+# Resulting names after build. Automatically generated if set to None.
+# {IMAGE_PREFIX}/deepo-{BASE_IMAGE_SUFFIX}:gpu
+BASE_IMAGE_NAME = None
+BASE_IMAGE_SUFFIX = None
+
+# {IMAGE_PREFIX}/deepo-{LAB_IMAGE_SUFFIX}:gpu
+LAB_IMAGE_NAME = None
+LAB_IMAGE_SUFFIX = 'tf1x'
+LAB_CONTAINER_NAME = None
+
 # This user will be created when running container.
 IMAGE_USER = 'master'
 
