@@ -187,6 +187,7 @@ docker build \\
         ''')
 
     def run_jl(self):
+        self._check_ports()
         cfg = self.config
         self._run(f'''
 nvidia-docker run \\
