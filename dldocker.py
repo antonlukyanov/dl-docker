@@ -2,6 +2,7 @@
 
 import os
 from os.path import join
+import re
 import importlib
 import argparse
 import subprocess
@@ -128,6 +129,8 @@ def parse_args():
 
 
 class Command:
+    regex = re.compile(r'[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}:([0-9]+)->')
+
     def __init__(self, config, dry_run=False):
         self.config = config
         self.dry_run = dry_run
@@ -138,6 +141,30 @@ class Command:
         if not self.dry_run:
             run(cmd)
         log('finished')
+
+    def _taken_ports(self):
+        taken_ports = set()
+        ps = run('docker ps --format \'{{.Names}} {{.Ports}}\'', stdout=subprocess.PIPE)
+        if ps.stdout:
+            ps = ps.stdout.strip()
+            for line in ps.splitlines():
+                if line and self.config.LAB_CONTAINER_NAME not in line:
+                    taken_ports.update(self.regex.findall(line))
+        return taken_ports
+
+    def _conflicting_ports(self):
+        conflicting_ports = []
+        taken_ports = self._taken_ports()
+        for port in [self.config.SSHD_PORT, self.config.JUPYTERLAB_PORT, self.config.TENSORBOARD_PORT]:
+            port = port.split(':')[0]
+            if port in taken_ports:
+                conflicting_ports.append(port)
+        return conflicting_ports
+
+    def _check_ports(self):
+        ports = self._conflicting_ports()
+        if ports:
+            raise RuntimeError(f'Following ports are taken: {ports}')
 
     def build(self):
         cfg = self.config
@@ -180,9 +207,8 @@ nvidia-docker run \\
         --no-browser \\
         --notebook-dir={cfg.NOTEBOOK_DIR} \\
         --LabApp.token=dgxtoken
-
-docker exec -d {cfg.LAB_CONTAINER_NAME} sudo /usr/sbin/sshd -D \\
         ''')
+        self._run(f'docker exec -d {cfg.LAB_CONTAINER_NAME} /usr/sbin/sshd -D')
 
     def run_it(self, command=None):
         cfg = self.config
@@ -227,6 +253,11 @@ Lab image: {cfg.LAB_IMAGE_NAME}
 Lab container: {cfg.LAB_CONTAINER_NAME}
 Mount: {cfg.MOUNT}
 Notebook dir: {cfg.NOTEBOOK_DIR}
+SSHD ports: {cfg.SSHD_PORT}
+Jupyterlab ports: {cfg.JUPYTERLAB_PORT}
+Tensorboard ports: {cfg.TENSORBOARD_PORT}
+Conflicting ports: {self._conflicting_ports()}
+Taken ports: {sorted(list(self._taken_ports()))}
         '''.strip())
 
     def exec(self, command=None):
