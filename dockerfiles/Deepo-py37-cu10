@@ -2,15 +2,13 @@
 # module list
 # ------------------------------------------------------------------
 # python        3.7    (apt)
-# jupyter       latest (pip)
 # pytorch       latest (pip)
 # tensorflow    latest (pip)
-# jupyterlab    latest (pip)
 # keras         latest (pip)
 # opencv        4.0.1  (git)
 # ==================================================================
 
-FROM nvidia/cuda:10.1-cudnn7-devel-ubuntu18.04
+FROM nvidia/cuda:10.0-cudnn7-devel-ubuntu18.04
 RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
     PIP_INSTALL="python -m pip --no-cache-dir install --upgrade" && \
     GIT_CLONE="git clone --depth 10" && \
@@ -75,13 +73,6 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
     ./bootstrap.sh --with-python=python3.7 && \
     ./b2 install --prefix=/usr/local && \
 
-# ==================================================================
-# jupyter
-# ------------------------------------------------------------------
-
-    $PIP_INSTALL \
-        jupyter \
-        && \
 
 # ==================================================================
 # pytorch
@@ -98,32 +89,7 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
         && \
     $PIP_INSTALL \
         torch_nightly -f \
-        https://download.pytorch.org/whl/nightly/cu90/torch_nightly.html \
-        && \
-
-# ==================================================================
-# tensorflow
-# ------------------------------------------------------------------
-
-    $PIP_INSTALL \
-        tensorflow-gpu==2.0.0-alpha0 \
-        && \
-
-# ==================================================================
-# jupyterlab
-# ------------------------------------------------------------------
-
-    $PIP_INSTALL \
-        jupyterlab \
-        && \
-
-# ==================================================================
-# keras
-# ------------------------------------------------------------------
-
-    $PIP_INSTALL \
-        h5py \
-        keras \
+        https://download.pytorch.org/whl/nightly/cu100/torch_nightly.html \
         && \
 
 # ==================================================================

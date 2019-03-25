@@ -1,0 +1,73 @@
+ARG DLD_DEEPO
+FROM $DLD_DEEPO
+
+ARG DLD_USER=master
+ENV DLD_USER $DLD_USER
+
+RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
+    PIP_INSTALL="python -m pip --no-cache-dir install --upgrade" && \
+    GIT_CLONE="git clone --depth 10" && \
+    apt-get update && \
+
+# ==================================================================
+# python
+# ------------------------------------------------------------------
+
+    $PIP_INSTALL \
+        tqdm \
+        click \
+        scikit-image \
+        jupyter \
+        jupyterlab \
+        tensorflow-gpu \
+        h5py \
+        keras \
+        && \
+
+# ==================================================================
+# sshd
+# ------------------------------------------------------------------
+
+    DEBIAN_FRONTEND=noninteractive $APT_INSTALL \
+        openssh-server sudo \
+        && \
+    mkdir \
+        /var/run/sshd \
+        && \
+    sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd \
+        && \
+    echo "export VISIBLE=now" >> /etc/profile \
+        && \
+    echo "$DLD_USER ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/$DLD_USER \
+        && \
+    chmod 0440 /etc/sudoers.d/$DLD_USER
+
+ENV NOTVISIBLE "in users profile"
+
+EXPOSE 22
+
+# ==================================================================
+# config & cleanup
+# ------------------------------------------------------------------
+
+RUN \
+    ldconfig && \
+    apt-get clean && \
+    apt-get autoremove && \
+    rm -rf /var/lib/apt/lists/* /tmp/*
+
+# 8888 - Jupyterlab
+# 6006 - TensorBoard
+EXPOSE 8888 6006
+
+# ==================================================================
+# user
+# ------------------------------------------------------------------
+
+ENV HOME=/home/$DLD_USER
+WORKDIR $HOME
+VOLUME /home/$DLD_USER
+
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

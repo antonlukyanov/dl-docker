@@ -1,14 +1,8 @@
-ARG JL_PREFIX
+ARG DLD_DEEPO
+FROM $DLD_DEEPO
 
-FROM ${JL_PREFIX}/deepo:gpu
-
-ARG JL_USER
-ARG JL_UID
-ARG JL_GID
-
-ENV JL_USER $JL_USER
-ENV JL_UID $JL_UID
-ENV JL_GID $JL_GID
+ARG DLD_USER=master
+ENV DLD_USER $DLD_USER
 
 RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
     PIP_INSTALL="python -m pip --no-cache-dir install --upgrade" && \
@@ -23,6 +17,9 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
         tqdm \
         click \
         scikit-image \
+        jupyter \
+        jupyterlab \
+        tf-nightly-gpu-2.0-preview \
         && \
 
 # ==================================================================
@@ -39,9 +36,9 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
         && \
     echo "export VISIBLE=now" >> /etc/profile \
         && \
-    echo "$JL_USER ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/$JL_USER \
+    echo "$DLD_USER ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/$DLD_USER \
         && \
-    chmod 0440 /etc/sudoers.d/$JL_USER
+    chmod 0440 /etc/sudoers.d/$DLD_USER
 
 ENV NOTVISIBLE "in users profile"
 
@@ -65,10 +62,10 @@ EXPOSE 8888 6006
 # user
 # ------------------------------------------------------------------
 
-RUN \
-    groupadd -f -g $JL_GID $JL_USER && \
-    useradd -r -u $JL_UID --create-home -g $JL_USER -s /bin/bash $JL_USER && \
-    echo "$JL_USER:$JL_USER" | chpasswd
+ENV HOME=/home/$DLD_USER
+WORKDIR $HOME
+VOLUME /home/$DLD_USER
 
-USER $JL_USER
-VOLUME /home/$JL_USER
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
