@@ -193,7 +193,7 @@ docker build \\
 nvidia-docker run \\
     -d \\
     -e DLD_UID=$(id -u) \\
-    -e DLD_GID=$(id -u) \\
+    -e DLD_GID=$(id -g) \\
     --hostname dgx1 \\
     --name {cfg.LAB_CONTAINER_NAME} \\
     -v {cfg.MOUNT} \\
@@ -218,7 +218,7 @@ nvidia-docker run \\
     -it \\
     --rm \\
     -e DLD_UID=$(id -u) \\
-    -e DLD_GID=$(id -u) \\
+    -e DLD_GID=$(id -g) \\
     --hostname dgx1 \\
     -v {cfg.MOUNT} \\
     --ipc host \\
