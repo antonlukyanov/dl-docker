@@ -197,9 +197,9 @@ nvidia-docker run \\
     --hostname dgx1 \\
     --name {cfg.LAB_CONTAINER_NAME} \\
     -v {cfg.MOUNT} \\
-    -p 8889:8888 \\
-    -p 8890:22 \\
-    -p 8899:6006 \\
+    -p {cfg.JUPYTERLAB_PORT} \\
+    -p {cfg.TENSORBOARD_PORT} \\
+    -p {cfg.SSHD_PORT} \\
     --ipc host \\
     {cfg.LAB_IMAGE_NAME} \\
     jupyter lab \\
@@ -240,7 +240,7 @@ docker exec -d {cfg.LAB_CONTAINER_NAME} sudo /usr/sbin/sshd -D
         self._run(f'docker rm {self.config.LAB_CONTAINER_NAME}')
 
     def rmi(self):
-        self._run(f'docker rmi ${self.config.LAB_IMAGE_NAME}')
+        self._run(f'docker rmi {self.config.LAB_IMAGE_NAME}')
 
     def info(self):
         cfg = self.config

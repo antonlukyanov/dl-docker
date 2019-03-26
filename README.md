@@ -15,7 +15,7 @@ Currently this repository contains two images:
 - the first image with tensorflow 1.x
 - and the second image with nightly build of tensorflow 2.
 
-To start running containers, it is first necessary to build main image with `./dldocker.py build` command. Then any user may run a new container by cloning this repository and executing `./dldocker.py run`. When user runs the container, a new `master` user is automatically created inside that container and associated with the host user. It is also possible and quite easy to execute a command inside running container with, for example, `./dldocker.py execute python3`, which will be executed under correct user and permissions.
+To start running containers, it is first necessary to build main image with `./dldocker.py build` command. Then any user may run a new container by cloning this repository and executing `./dldocker.py run-jl`. When user runs the container, a new `master` user is automatically created inside that container and associated with the host user. It is also possible and quite easy to execute a command inside running container with, for example, `./dldocker.py execute python3`, which will be executed under correct user and permissions.
 
 ## Main commands
 
