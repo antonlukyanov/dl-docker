@@ -240,11 +240,7 @@ docker exec -d {cfg.LAB_CONTAINER_NAME} sudo /usr/sbin/sshd -D
         self._run(f'docker rm {self.config.LAB_CONTAINER_NAME}')
 
     def rmi(self):
-        cfg = self.config
-        self._run(f'''
-docker rmi ${cfg.LAB_IMAGE_NAME}
-docker rmi ${cfg.BASE_IMAGE_NAME}
-        ''')
+        self._run(f'docker rmi ${self.config.LAB_IMAGE_NAME}')
 
     def info(self):
         cfg = self.config
@@ -280,6 +276,8 @@ def main(args):
         cmdo.stop()
     elif cmd == 'rmc':
         cmdo.rmc()
+    elif cmd == 'rmi':
+        cmdo.rmi()
     elif cmd == 'exec':
         cmdo.exec(args.container_command)
     elif cmd == 'info':
