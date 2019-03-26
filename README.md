@@ -19,7 +19,7 @@ To start running containers, it is first necessary to build main image with `./d
 
 ## Main commands
 
-First of all, `dldocker.py` accepts `--config` option which can specify configuration file from `configs` folder. Its default value is `default` configuration with tensorflow 1.x. And every command accepts `-d` flag for dry run.
+First of all, `dldocker.py` accepts `--config` option which can specify configuration file from `configs` folder. Its default value is `tf1x` configuration with tensorflow 1.x. Also every command accepts `-d` flag for dry run.
 
 - `build`: builds base and main image based on specified configuration. Working directory is `/home/master`.
 - `run-jl`: creates and runs a new detached container with preconfigured jupyterlab and sshd (login/password is master/master). `$HOME/projects` is mounted to `/workspace/projects` and notebooks are served from `/workspace/projects` folder.
