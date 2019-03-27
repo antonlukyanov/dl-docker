@@ -59,6 +59,9 @@ def process_config(config):
     config.TENSORBOARD_PORT = config.TENSORBOARD_PORT or \
         '8899:6006'
 
+    config.HOSTNAME = config.HOSTNAME or \
+        'dl-server'
+
     return config
 
 
@@ -194,7 +197,7 @@ nvidia-docker run \\
     -d \\
     -e DLD_UID=$(id -u) \\
     -e DLD_GID=$(id -g) \\
-    --hostname dgx1 \\
+    --hostname {cfg.HOSTNAME} \\
     --name {cfg.LAB_CONTAINER_NAME} \\
     -v {cfg.MOUNT} \\
     -p {cfg.JUPYTERLAB_PORT} \\
@@ -219,7 +222,7 @@ nvidia-docker run \\
     --rm \\
     -e DLD_UID=$(id -u) \\
     -e DLD_GID=$(id -g) \\
-    --hostname dgx1 \\
+    --hostname {cfg.HOSTNAME} \\
     -v {cfg.MOUNT} \\
     --ipc host \\
     {cfg.LAB_IMAGE_NAME} \\
