@@ -1,14 +1,10 @@
 # Deep learning image based on deepo
 
-This repository contains a few images along with the collection of scripts which try to solve the problem of building images and running containers in a multiuser environment.
-
-What is the problem? If you work on a server where you do not have normal root access, then running docker containers with root user might become a problem: files created by container will be saved with root owner and permissions. You will not be able to edit your files. Also running containers with correctly configured users lets you easily monitor which user uses computational resources.
+If you work on a server where you do not have normal root access, then running docker containers with root user might become a problem: files created by container will be saved with root owner and permissions. You will not be able to edit your files. Also running containers with correctly configured users lets you easily monitor which user uses computational resources. This repository contains a few images along with the collection of scripts which allow you to run containers with correct user permissions from one image in a multiuser environment.
 
 ## How it works
 
-One would like to be able to work with multiple images and containers using the same collection of scripts.
-
-The main idea is that there is a (fat) base image and (lightweight) main images based on those. Building images and running containers is based on configuration files which specify what image to use and how to name things (image, containers etc).
+One would like to be able to work with multiple images and containers using the same collection of scripts. The main idea is that there is a (fat) base image and (lightweight) main images based on those. Building images and running containers is based on configuration files which specify what image to use and how to name things (image, containers etc).
 
 Currently this repository contains two images:
 
