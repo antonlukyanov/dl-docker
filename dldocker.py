@@ -216,10 +216,9 @@ nvidia-docker run \\
     {cfg.LAB_IMAGE_NAME} \\
     jupyter lab \\
         --ip 0.0.0.0 \\
-        --allow-root \\
         --no-browser \\
         --notebook-dir={cfg.NOTEBOOK_DIR} \\
-        --LabApp.token=dgxtoken
+        --LabApp.token=dlservertoken
         ''')
         self._run(f'docker exec -d {cfg.LAB_CONTAINER_NAME} /usr/sbin/sshd -D')
 
