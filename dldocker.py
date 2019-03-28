@@ -23,7 +23,7 @@ def log(msg, file=None, time_prefix=True):
 
 
 def list_configs():
-    return [x.replace('.py', '') for x in os.listdir(join('configs')) if x.endswith('.py')]
+    return [x.replace('.py', '') for x in os.listdir(join('configs')) if x.endswith('.py') and x != 'defaults.py']
 
 
 def process_config(config):
