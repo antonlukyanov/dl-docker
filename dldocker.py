@@ -27,22 +27,31 @@ def list_configs():
 
 
 def process_config(config):
+    import configs.defaults as defaults
+
+    # Filling defaults for missing keys.
+    for k in dir(defaults):
+        if not k.startswith('__') and not hasattr(config, k):
+            setattr(config, k, getattr(defaults, k))
+
     whoami = run('whoami', stdout=subprocess.PIPE).stdout.strip() or ''
 
-    base_image_suffix = '-' + config.BASE_IMAGE_SUFFIX if config.BASE_IMAGE_SUFFIX else ''
+    base_image_suffix = config.BASE_IMAGE_SUFFIX or ''
 
     config.BASE_IMAGE_NAME = config.BASE_IMAGE_NAME or \
         f'{config.IMAGE_PREFIX}/base{base_image_suffix}:gpu'
 
-    config.CONTAINER_PREFIX = whoami if whoami != 'a.lukyanov1' else 'adl'
+    config.LAB_CONTAINER_PREFIX = config.LAB_CONTAINER_PREFIX \
+        if config.LAB_CONTAINER_PREFIX \
+        else whoami + '-' if whoami != 'a.lukyanov1' else 'adl-'
 
-    lab_image_suffix = '-' + config.LAB_IMAGE_SUFFIX if config.LAB_IMAGE_SUFFIX else ''
+    lab_image_suffix = config.LAB_IMAGE_SUFFIX or ''
 
     config.LAB_IMAGE_NAME = config.LAB_IMAGE_NAME or \
         f'{config.IMAGE_PREFIX}/lab{lab_image_suffix}:gpu'
 
     config.LAB_CONTAINER_NAME = config.LAB_CONTAINER_NAME or \
-        f'{config.CONTAINER_PREFIX}-lab{lab_image_suffix}'
+        f'{config.LAB_CONTAINER_PREFIX}lab{lab_image_suffix}'
 
     config.NOTEBOOK_DIR = config.NOTEBOOK_DIR or \
         '/workspace/projects'
@@ -172,17 +181,17 @@ class Command:
     def build(self):
         cfg = self.config
 
-        if cfg.DOCKERFILE_BASE:
+        if cfg.BASE_DOCKERFILE:
             self._run(f'''
 docker build \\
-    -f dockerfiles/{cfg.DOCKERFILE_BASE} \\
+    -f dockerfiles/{cfg.BASE_DOCKERFILE} \\
     -t {cfg.BASE_IMAGE_NAME} \\
     dockercontext
             ''')
 
         self._run(f'''
 docker build \\
-    -f dockerfiles/{cfg.DOCKERFILE_LAB} \\
+    -f dockerfiles/{cfg.LAB_DOCKERFILE} \\
     --build-arg DLD_BASE={cfg.BASE_IMAGE_NAME} \\
     --build-arg DLD_USER={cfg.IMAGE_USER} \\
     -t {cfg.LAB_IMAGE_NAME} \\

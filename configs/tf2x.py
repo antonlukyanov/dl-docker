@@ -1,29 +1,5 @@
-#
-# Build configuration
-#
-
-# Base image won't be built if set to None.
-DOCKERFILE_BASE = 'Deepo-py37-cu10'
-DOCKERFILE_LAB = 'Lab-tf2x'
-
-IMAGE_PREFIX = 'dld'
-
-BASE_IMAGE_NAME = None
-BASE_IMAGE_SUFFIX = None
-
-LAB_IMAGE_NAME = None
+LAB_DOCKERFILE = 'Lab-tf2x'
 LAB_IMAGE_SUFFIX = 'tf2x'
-LAB_CONTAINER_NAME = None
-
-IMAGE_USER = 'master'
-
-#
-# Running container configuration
-#
-
-NOTEBOOK_DIR = None
-MOUNT = '$HOME/projects:/workspace/projects'
 JUPYTERLAB_PORT = '9003:8888'
 TENSORBOARD_PORT = '9004:6006'
 SSHD_PORT = '9005:22'
-HOSTNAME = 'dl-server'
