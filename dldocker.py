@@ -103,6 +103,12 @@ def parse_args():
         'run-jl',
         description='Runs a new container and jupyterlab with sshd.'
     )
+    parser_run_jl.add_argument(
+        '-a',
+        '--autoports',
+        help='Select ports automatically.',
+        action='store_true'
+    )
     parser_run_it = parser_cmd.add_parser(
         'run-it',
         description='Interactively runs specified command in a new container.'
@@ -160,9 +166,13 @@ class Command:
         if ps.stdout:
             ps = ps.stdout.strip()
             for line in ps.splitlines():
-                if line and self.config.LAB_CONTAINER_NAME not in line:
+                if line:
                     taken_ports.update(self.regex.findall(line))
         return taken_ports
+
+    def _guess_ports(self):
+        start_from = max(9000, int(sorted(self._taken_ports())[-1]))
+        return range(start_from + 1, start_from + 4)
 
     def _conflicting_ports(self):
         conflicting_ports = []
@@ -198,9 +208,15 @@ docker build \\
     dockercontext
         ''')
 
-    def run_jl(self):
-        self._check_ports()
+    def run_jl(self, autoports=False):
         cfg = self.config
+        if not autoports:
+            self._check_ports()
+            jl_port = cfg.JUPYTERLAB_PORT
+            tb_port = cfg.TENSORBOARD_PORT
+            sshd_port = cfg.SSHD_PORT
+        else:
+            jl_port, tb_port, sshd_port = self._guess_ports()
         self._run(f'''
 nvidia-docker run \\
     -d \\
@@ -209,9 +225,9 @@ nvidia-docker run \\
     --hostname {cfg.HOSTNAME} \\
     --name {cfg.LAB_CONTAINER_NAME} \\
     -v {cfg.MOUNT} \\
-    -p {cfg.JUPYTERLAB_PORT} \\
-    -p {cfg.TENSORBOARD_PORT} \\
-    -p {cfg.SSHD_PORT} \\
+    -p {jl_port} \\
+    -p {tb_port} \\
+    -p {sshd_port} \\
     --ipc host \\
     {cfg.LAB_IMAGE_NAME} \\
     jupyter lab \\
@@ -278,7 +294,7 @@ def main(args):
     if cmd == 'build':
         cmdo.build()
     elif cmd == 'run-jl':
-        cmdo.run_jl()
+        cmdo.run_jl(args.autoports)
     elif cmd == 'run-it-rm':
         cmdo.run_it_rm(args.container_command)
     elif cmd == 'start':

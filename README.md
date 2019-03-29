@@ -16,7 +16,7 @@ Both images come with configured jupyterlab and sshd.
 ## Quick start
 
 - `./dldocker.py build` if image hasn't been built
-- `./dldocker.py run-jl` to run jupyterlab and sshd in detached mode
+- `./dldocker.py run-jl --autoports` to run jupyterlab and sshd in detached mode with automatically selected ports
 
 When user runs the container, a new `master` user is automatically created inside new container and associated with the host user. It is also possible and quite easy to execute a command inside running container with `./dldocker.py execute python3`, which will be executed under correct user and permissions.
 
