@@ -296,8 +296,8 @@ Notebook dir: {cfg.NOTEBOOK_DIR}
 SSHD ports: {cfg.SSHD_PORT}
 Jupyterlab ports: {cfg.JUPYTERLAB_PORT}
 Tensorboard ports: {cfg.TENSORBOARD_PORT}
-Conflicting ports: {self._conflicting_ports()}
-Taken ports: {sorted(list(self._taken_ports()))}
+Conflicting ports: {', '.join(self._conflicting_ports())}
+Taken ports: {', '.join(sorted(list(self._taken_ports())))}
         '''.strip())
 
     def exec(self, command=None):
