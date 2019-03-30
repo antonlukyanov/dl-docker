@@ -252,7 +252,6 @@ nvidia-docker run \\
         --LabApp.token=dlservertoken
 docker exec -d {cfg.LAB_CONTAINER_NAME} /usr/sbin/sshd -D
         ''')
-        # self._run(f'docker exec -d {cfg.LAB_CONTAINER_NAME} /usr/sbin/sshd -D')
 
     def run_it_rm(self, command=None, mountpoint=None):
         cfg = self.config
