@@ -22,10 +22,6 @@ def log(msg, file=None, time_prefix=True):
         print(msg, file=file)
 
 
-def list_configs():
-    return [x.replace('.py', '') for x in os.listdir(join('configs')) if x.endswith('.py') and x != 'defaults.py']
-
-
 def process_config(config):
     import configs.defaults as defaults
 
@@ -56,7 +52,7 @@ def process_config(config):
     config.NOTEBOOK_DIR = config.NOTEBOOK_DIR or \
         '/workspace/projects'
 
-    config.MOUNT = config.MOUNT or \
+    config.MOUNTPOINT = config.MOUNTPOINT or \
         '$HOME/projects:/workspace/projects'
 
     config.SSHD_PORT = config.SSHD_PORT or \
@@ -75,15 +71,17 @@ def process_config(config):
 
 
 def parse_args():
+    configs = [x.replace('.py', '') for x in os.listdir(join('configs')) if x.endswith('.py') and x != 'defaults.py']
+
     parser = argparse.ArgumentParser(
-        description='Main script used for building and running deep learning images and containers.'
+        description='Main script for building and running deep learning images and containers.'
     )
     parser.add_argument(
         '-c',
         '--config',
         help='Configuration contaning image tag, container name and build configuration.',
         default='tf1x',
-        choices=list_configs()
+        choices=configs
     )
     parser.add_argument(
         '-d',
@@ -92,16 +90,16 @@ def parse_args():
         action='store_true'
     )
 
-    parser_cmd = parser.add_subparsers(dest='command')
+    parser_cmd = parser.add_subparsers(dest='command', title='command')
     parser_cmd.required = True
 
     parser_build = parser_cmd.add_parser(
         'build',
-        description='Builds image.'
+        help='Builds image.'
     )
     parser_run_jl = parser_cmd.add_parser(
         'run-jl',
-        description='Runs a new container and jupyterlab with sshd.'
+        help='Runs a new container and starts jupyterlab with sshd.'
     )
     parser_run_jl.add_argument(
         '-a',
@@ -109,39 +107,54 @@ def parse_args():
         help='Select ports automatically.',
         action='store_true'
     )
-    parser_run_it = parser_cmd.add_parser(
-        'run-it',
-        description='Interactively runs specified command in a new container.'
+    parser_run_jl.add_argument(
+        '--mountpoint',
+        help='Container mount point in format host_path:container_path.',
     )
-    parser_run_it.add_argument(
+    parser_run_jl.add_argument(
+        '--notebook-dir',
+        help='Path to notebooks directory inside container.',
+    )
+    parser_run_it_rm = parser_cmd.add_parser(
+        'run-it-rm',
+        help='Interactively runs specified command in a new container and then deletes container.'
+    )
+    parser_run_it_rm.add_argument(
+        '--mountpoint',
+        help='Container mount point in format host_path:container_path.',
+    )
+    parser_run_it_rm.add_argument(
         'container_command',
         nargs='?'
     )
     parser_rmc = parser_cmd.add_parser(
         'rmc',
-        description='Removes container.'
+        help='Removes container.'
     )
     parser_rmi = parser_cmd.add_parser(
         'rmi',
-        description='Removes image.'
+        help='Removes image.'
     )
     parser_start = parser_cmd.add_parser(
         'start',
-        description='Starts existing container.'
+        help='Starts existing container.'
     )
     parser_stop = parser_cmd.add_parser(
         'stop',
-        description='Stops running container.'
+        help='Stops running container.'
     )
     parser_exec = parser_cmd.add_parser(
         'exec',
-        description='Executes command in a running container. Default command is bash.'
+        help='Executes command in a running container. Default command is bash.'
     )
     parser_exec.add_argument(
         'container_command',
         nargs='?'
     )
-    parser_info = parser_cmd.add_parser('info')
+    parser_info = parser_cmd.add_parser(
+        'info',
+        help='Prints configuration summary.'
+    )
 
     return parser.parse_args()
 
@@ -208,7 +221,7 @@ docker build \\
     dockercontext
         ''')
 
-    def run_jl(self, autoports=False):
+    def run_jl(self, autoports=False, mountpoint=None, notebook_dir=None):
         cfg = self.config
         if not autoports:
             self._check_ports()
@@ -217,6 +230,8 @@ docker build \\
             sshd_port = cfg.SSHD_PORT
         else:
             jl_port, tb_port, sshd_port = self._guess_ports()
+        mountpoint = mountpoint or cfg.MOUNTPOINT
+        notebook_dir = notebook_dir or cfg.NOTEBOOK_DIR
         self._run(f'''
 nvidia-docker run \\
     -d \\
@@ -224,7 +239,7 @@ nvidia-docker run \\
     -e DLD_GID=$(id -g) \\
     --hostname {cfg.HOSTNAME} \\
     --name {cfg.LAB_CONTAINER_NAME} \\
-    -v {cfg.MOUNT} \\
+    -v {mountpoint} \\
     -p {jl_port} \\
     -p {tb_port} \\
     -p {sshd_port} \\
@@ -233,13 +248,15 @@ nvidia-docker run \\
     jupyter lab \\
         --ip 0.0.0.0 \\
         --no-browser \\
-        --notebook-dir={cfg.NOTEBOOK_DIR} \\
+        --notebook-dir={notebook_dir} \\
         --LabApp.token=dlservertoken
+docker exec -d {cfg.LAB_CONTAINER_NAME} /usr/sbin/sshd -D
         ''')
-        self._run(f'docker exec -d {cfg.LAB_CONTAINER_NAME} /usr/sbin/sshd -D')
+        # self._run(f'docker exec -d {cfg.LAB_CONTAINER_NAME} /usr/sbin/sshd -D')
 
-    def run_it_rm(self, command=None):
+    def run_it_rm(self, command=None, mountpoint=None):
         cfg = self.config
+        mountpoint = mountpoint or cfg.MOUNTPOINT
         self._run(f'''
 nvidia-docker run \\
     -it \\
@@ -247,7 +264,7 @@ nvidia-docker run \\
     -e DLD_UID=$(id -u) \\
     -e DLD_GID=$(id -g) \\
     --hostname {cfg.HOSTNAME} \\
-    -v {cfg.MOUNT} \\
+    -v {mountpoint} \\
     --ipc host \\
     {cfg.LAB_IMAGE_NAME} \\
     {command or "bash"}
@@ -275,7 +292,7 @@ docker exec -d {cfg.LAB_CONTAINER_NAME} sudo /usr/sbin/sshd -D
 Base image: {cfg.BASE_IMAGE_NAME}
 Lab image: {cfg.LAB_IMAGE_NAME}
 Lab container: {cfg.LAB_CONTAINER_NAME}
-Mount: {cfg.MOUNT}
+Mountpoint: {cfg.MOUNTPOINT}
 Notebook dir: {cfg.NOTEBOOK_DIR}
 SSHD ports: {cfg.SSHD_PORT}
 Jupyterlab ports: {cfg.JUPYTERLAB_PORT}
@@ -294,9 +311,9 @@ def main(args):
     if cmd == 'build':
         cmdo.build()
     elif cmd == 'run-jl':
-        cmdo.run_jl(args.autoports)
+        cmdo.run_jl(args.autoports, args.mountpoint, args.notebook_dir)
     elif cmd == 'run-it-rm':
-        cmdo.run_it_rm(args.container_command)
+        cmdo.run_it_rm(args.container_command, args.mountpoint)
     elif cmd == 'start':
         cmdo.start()
     elif cmd == 'stop':

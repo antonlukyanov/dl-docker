@@ -35,7 +35,7 @@ HOSTNAME = 'dl-server'
 # Jupyterlab default folder.
 NOTEBOOK_DIR = '/workspace/projects'
 # HOST_DIR:CONTAINER_DIR
-MOUNT = '$HOME/projects:/workspace/projects'
+MOUNTPOINT = '$HOME/projects:/workspace/projects'
 # HOST_PORT:CONTAINER_PORT
 JUPYTERLAB_PORT = '9000:8888'
 TENSORBOARD_PORT = '9001:6006'
