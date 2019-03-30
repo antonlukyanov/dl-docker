@@ -21,9 +21,17 @@ Currently this repository contains two images:
 
 Both images come with configured jupyterlab and sshd.
 
+It is also possible to specify base image from docker hub. Example configuration:
+
+```python
+BASE_IMAGE_NAME = 'ubuntu:18.04'
+LAB_DOCKERFILE = 'Lab-tf1x'
+LAB_IMAGE_SUFFIX = '-ubuntu-tf1x'
+```
+
 ## Main commands
 
-Note that `dldocker.py` accepts `--config` option which can specify configuration file from `configs` folder. Its default value is `tf1x` configuration with tensorflow 1.x. Also every command accepts `-d` flag for dry run.
+Note that `dldocker.py` accepts `--config` option where you specify configuration file from `configs` folder. Its default value is `tf1x` configuration with tensorflow 1.x. Also every command accepts `-d` flag for dry run.
 
 - `build`: builds base and main image based on specified configuration. Working directory is `/home/master`.
 - `run-jl`: creates and runs a new detached container with preconfigured jupyterlab and sshd (login/password is master/master) which can be used for remote python configuration in PyCharm. `$HOME/projects` is mounted to `/workspace/projects` and notebooks are served from `/workspace/projects` folder.
