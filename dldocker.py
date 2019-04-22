@@ -96,14 +96,18 @@ def parse_args():
         action='store_true'
     )
 
-    # TODO: skip building of a base image.
-
     parser_cmd = parser.add_subparsers(dest='command', title='command')
     parser_cmd.required = True
 
     parser_build = parser_cmd.add_parser(
         'build',
         help='Builds image.'
+    )
+    parser_build.add_argument(
+        '-s',
+        '--skip-base',
+        help='Skips building of base image.',
+        action='store_true'
     )
     parser_run_jl = parser_cmd.add_parser(
         'run-jl',
@@ -215,16 +219,17 @@ class Command:
             jl_port, tb_port, sshd_port = self._guess_ports()
             return f'{jl_port}:8888', f'{tb_port}:6006', f'{sshd_port}:22'
 
-    def build(self):
+    def build(self, skip_base=False):
         cfg = self.config
 
         if cfg.BASE_DOCKERFILE:
-            self._run(f'''
+            if not skip_base:
+                self._run(f'''
 docker build \\
     -f dockerfiles/{cfg.BASE_DOCKERFILE} \\
     -t {cfg.BASE_IMAGE_NAME} \\
     dockercontext
-            ''')
+                ''')
 
         self._run(f'''
 docker build \\
@@ -317,7 +322,7 @@ def main(args):
     cmd = args.command
     cmdo = Command(process_config(importlib.import_module('configs.' + args.config)), args.dry_run)
     if cmd == 'build':
-        cmdo.build()
+        cmdo.build(args.skip_base)
     elif cmd == 'run-jl':
         cmdo.run_jl(args.autoports, args.mountpoint, args.notebook_dir)
     elif cmd == 'run-it-rm':
