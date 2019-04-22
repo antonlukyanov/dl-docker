@@ -89,6 +89,14 @@ def parse_args():
         help='Dry run.',
         action='store_true'
     )
+    parser.add_argument(
+        '-a',
+        '--autoports',
+        help='Select ports automatically.',
+        action='store_true'
+    )
+
+    # TODO: skip building of a base image.
 
     parser_cmd = parser.add_subparsers(dest='command', title='command')
     parser_cmd.required = True
@@ -100,12 +108,6 @@ def parse_args():
     parser_run_jl = parser_cmd.add_parser(
         'run-jl',
         help='Runs a new container and starts jupyterlab with sshd.'
-    )
-    parser_run_jl.add_argument(
-        '-a',
-        '--autoports',
-        help='Select ports automatically.',
-        action='store_true'
     )
     parser_run_jl.add_argument(
         '--mountpoint',
@@ -185,21 +187,33 @@ class Command:
 
     def _guess_ports(self):
         start_from = max(9000, int(sorted(self._taken_ports())[-1]))
-        return range(start_from + 1, start_from + 4)
+        return list(map(str, range(start_from + 1, start_from + 4)))
 
-    def _conflicting_ports(self):
+    def _conflicting_ports(self, ports=None):
+        if not ports:
+            ports = [self.config.SSHD_PORT, self.config.JUPYTERLAB_PORT, self.config.TENSORBOARD_PORT]
         conflicting_ports = []
         taken_ports = self._taken_ports()
-        for port in [self.config.SSHD_PORT, self.config.JUPYTERLAB_PORT, self.config.TENSORBOARD_PORT]:
+        for port in ports:
             port = port.split(':')[0]
             if port in taken_ports:
                 conflicting_ports.append(port)
         return conflicting_ports
 
-    def _check_ports(self):
-        ports = self._conflicting_ports()
+    def _check_ports(self, ports=None):
+        ports = self._conflicting_ports(ports)
         if ports:
             raise RuntimeError(f'Following ports are taken: {ports}')
+
+    def _get_ports(self, autoports, check=True):
+        cfg = self.config
+        if not autoports:
+            if check:
+                self._check_ports()
+            return cfg.JUPYTERLAB_PORT, cfg.TENSORBOARD_PORT, cfg.SSHD_PORT
+        else:
+            jl_port, tb_port, sshd_port = self._guess_ports()
+            return f'{jl_port}:8888', f'{tb_port}:6006', f'{sshd_port}:22'
 
     def build(self):
         cfg = self.config
@@ -223,13 +237,7 @@ docker build \\
 
     def run_jl(self, autoports=False, mountpoint=None, notebook_dir=None):
         cfg = self.config
-        if not autoports:
-            self._check_ports()
-            jl_port = cfg.JUPYTERLAB_PORT
-            tb_port = cfg.TENSORBOARD_PORT
-            sshd_port = cfg.SSHD_PORT
-        else:
-            jl_port, tb_port, sshd_port = self._guess_ports()
+        jl_port, tb_port, sshd_port = self._get_ports(autoports)
         mountpoint = mountpoint or cfg.MOUNTPOINT
         notebook_dir = notebook_dir or cfg.NOTEBOOK_DIR
         self._run(f'''
@@ -285,18 +293,19 @@ docker exec -d {cfg.LAB_CONTAINER_NAME} sudo /usr/sbin/sshd -D
     def rmi(self):
         self._run(f'docker rmi {self.config.LAB_IMAGE_NAME}')
 
-    def info(self):
+    def info(self, autoports=False):
         cfg = self.config
+        jl_port, tb_port, sshd_port = self._get_ports(autoports, check=False)
         print(f'''
 Base image: {cfg.BASE_IMAGE_NAME}
 Lab image: {cfg.LAB_IMAGE_NAME}
 Lab container: {cfg.LAB_CONTAINER_NAME}
 Mountpoint: {cfg.MOUNTPOINT}
 Notebook dir: {cfg.NOTEBOOK_DIR}
-SSHD ports: {cfg.SSHD_PORT}
-Jupyterlab ports: {cfg.JUPYTERLAB_PORT}
-Tensorboard ports: {cfg.TENSORBOARD_PORT}
-Conflicting ports: {', '.join(self._conflicting_ports())}
+SSHD ports: {sshd_port}
+Jupyterlab ports: {jl_port}
+Tensorboard ports: {tb_port}
+Conflicting ports: {', '.join(self._conflicting_ports([jl_port, tb_port, sshd_port])) or '[]'}
 Taken ports: {', '.join(sorted(list(self._taken_ports())))}
         '''.strip())
 
@@ -324,7 +333,7 @@ def main(args):
     elif cmd == 'exec':
         cmdo.exec(args.container_command)
     elif cmd == 'info':
-        cmdo.info()
+        cmdo.info(args.autoports)
 
 
 if __name__ == '__main__':
