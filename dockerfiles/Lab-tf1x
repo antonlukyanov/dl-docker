@@ -3,6 +3,7 @@ FROM $DLD_BASE
 
 ARG DLD_USER=master
 ENV DLD_USER $DLD_USER
+ENV TF_ENABLE_AUTO_MIXED_PRECISION 1
 
 RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
     PIP_INSTALL="python -m pip --no-cache-dir install --upgrade" && \
