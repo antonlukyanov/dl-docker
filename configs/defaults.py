@@ -10,7 +10,7 @@ LAB_DOCKERFILE = 'Lab-tf1x'
 IMAGE_PREFIX = 'dld'
 
 # Resulting names after build. Automatically generated if set to None.
-# {IMAGE_PREFIX}/deepo{BASE_IMAGE_SUFFIX}:gpu
+# {IMAGE_PREFIX}/base{BASE_IMAGE_SUFFIX}:gpu
 BASE_IMAGE_NAME = None
 BASE_IMAGE_SUFFIX = None
 

@@ -23,7 +23,15 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
         tensorflow-gpu \
         h5py \
         keras \
+        imgaug \
         && \
+
+# ==================================================================
+# jupyterlab extensions
+# ------------------------------------------------------------------
+
+    sudo jupyter labextension install @jupyterlab/toc && \
+    sudo jupyter labextension install @krassowski/jupyterlab_go_to_definition && \
 
 # ==================================================================
 # sshd
