@@ -33,15 +33,6 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
         && \
 
 # ==================================================================
-# Libraries
-# ------------------------------------------------------------------
-
-    # For python imgaug
-    DEBIAN_FRONTEND=noninteractive $APT_INSTALL \
-        libsm6 libxext6 libxrender-dev \
-        && \
-
-# ==================================================================
 # python
 # ------------------------------------------------------------------
 
@@ -68,38 +59,9 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
         scipy \
         pandas \
         cloudpickle \
-        scikit-learn==0.20.0 \
+        scikit-learn \
         matplotlib \
         Cython \
-        && \
-
-# ==================================================================
-# boost
-# ------------------------------------------------------------------
-
-    wget -O ~/boost.tar.gz https://dl.bintray.com/boostorg/release/1.69.0/source/boost_1_69_0.tar.gz && \
-    tar -zxf ~/boost.tar.gz -C ~ && \
-    cd ~/boost_* && \
-    ./bootstrap.sh --with-python=python3.6 && \
-    ./b2 install --prefix=/usr/local && \
-
-
-# ==================================================================
-# pytorch
-# ------------------------------------------------------------------
-
-    $PIP_INSTALL \
-        future \
-        numpy \
-        protobuf \
-        enum34 \
-        pyyaml \
-        typing \
-    	torchvision_nightly \
-        && \
-    $PIP_INSTALL \
-        torch_nightly -f \
-        https://download.pytorch.org/whl/nightly/cu100/torch_nightly.html \
         && \
 
 # ==================================================================
@@ -130,6 +92,52 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
           .. && \
     make -j"$(nproc)" install && \
     ln -s /usr/local/include/opencv4/opencv2 /usr/local/include/opencv2 && \
+
+# ==================================================================
+# Libraries
+# ------------------------------------------------------------------
+
+    # For python imgaug
+    DEBIAN_FRONTEND=noninteractive $APT_INSTALL \
+        libsm6 libxext6 libxrender-dev \
+        && \
+
+# ==================================================================
+# nodejs
+# ------------------------------------------------------------------
+
+    curl -sL https://deb.nodesource.com/setup_10.x -o /tmp/nodesource_setup.sh && \
+    bash /tmp/nodesource_setup.sh && \
+    DEBIAN_FRONTEND=noninteractive $APT_INSTALL nodejs && \
+
+# ==================================================================
+# boost
+# ------------------------------------------------------------------
+
+    wget -O ~/boost.tar.gz https://dl.bintray.com/boostorg/release/1.69.0/source/boost_1_69_0.tar.gz && \
+    tar -zxf ~/boost.tar.gz -C ~ && \
+    cd ~/boost_* && \
+    ./bootstrap.sh --with-python=python3.6 && \
+    ./b2 install --prefix=/usr/local && \
+
+
+# ==================================================================
+# pytorch
+# ------------------------------------------------------------------
+
+    $PIP_INSTALL \
+        future \
+        numpy \
+        protobuf \
+        enum34 \
+        pyyaml \
+        typing \
+    	torchvision \
+        && \
+    $PIP_INSTALL \
+        torch_nightly -f \
+        https://download.pytorch.org/whl/nightly/cu100/torch_nightly.html \
+        && \
 
 # ==================================================================
 # config & cleanup

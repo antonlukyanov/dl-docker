@@ -29,8 +29,8 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
 # jupyterlab extensions
 # ------------------------------------------------------------------
 
-    sudo jupyter labextension install @jupyterlab/toc && \
-    sudo jupyter labextension install @krassowski/jupyterlab_go_to_definition && \
+    jupyter labextension install @jupyterlab/toc && \
+    jupyter labextension install @krassowski/jupyterlab_go_to_definition && \
 
 # ==================================================================
 # sshd

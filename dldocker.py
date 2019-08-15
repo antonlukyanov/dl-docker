@@ -121,6 +121,10 @@ def parse_args():
         '--notebook-dir',
         help='Path to notebooks directory inside container.',
     )
+    parser_run_jl.add_argument(
+        '-m', '--memory',
+        help='Memory limit.',
+    )
     parser_run_it_rm = parser_cmd.add_parser(
         'run-it-rm',
         help='Interactively runs specified command in a new container and then deletes container.'
@@ -132,6 +136,10 @@ def parse_args():
     parser_run_it_rm.add_argument(
         'container_command',
         nargs='?'
+    )
+    parser_run_it_rm.add_argument(
+        '-m', '--memory',
+        help='Memory limit.',
     )
     parser_rmc = parser_cmd.add_parser(
         'rmc',
@@ -240,11 +248,12 @@ docker build \\
     dockercontext
         ''')
 
-    def run_jl(self, autoports=False, mountpoint=None, notebook_dir=None):
+    def run_jl(self, autoports=False, mountpoint=None, notebook_dir=None, memory=None):
         cfg = self.config
         jl_port, tb_port, sshd_port = self._get_ports(autoports)
         mountpoint = mountpoint or cfg.MOUNTPOINT
         notebook_dir = notebook_dir or cfg.NOTEBOOK_DIR
+        memory = f'--memory {memory}' if memory else ''
         self._run(f'''
 nvidia-docker run \\
     -d \\
@@ -257,6 +266,7 @@ nvidia-docker run \\
     -p {tb_port} \\
     -p {sshd_port} \\
     --ipc host \\
+    {memory} \\
     {cfg.LAB_IMAGE_NAME} \\
     jupyter lab \\
         --ip 0.0.0.0 \\
@@ -266,9 +276,10 @@ nvidia-docker run \\
 docker exec -d {cfg.LAB_CONTAINER_NAME} /usr/sbin/sshd -D
         ''')
 
-    def run_it_rm(self, command=None, mountpoint=None):
+    def run_it_rm(self, command=None, mountpoint=None, memory=None):
         cfg = self.config
         mountpoint = mountpoint or cfg.MOUNTPOINT
+        memory = f'--memory {memory}' if memory else ''
         self._run(f'''
 nvidia-docker run \\
     -it \\
@@ -278,6 +289,7 @@ nvidia-docker run \\
     --hostname {cfg.HOSTNAME} \\
     -v {mountpoint} \\
     --ipc host \\
+    {memory} \\
     {cfg.LAB_IMAGE_NAME} \\
     {command or "bash"}
         ''')
@@ -324,9 +336,9 @@ def main(args):
     if cmd == 'build':
         cmdo.build(args.skip_base)
     elif cmd == 'run-jl':
-        cmdo.run_jl(args.autoports, args.mountpoint, args.notebook_dir)
+        cmdo.run_jl(args.autoports, args.mountpoint, args.notebook_dir, args.memory)
     elif cmd == 'run-it-rm':
-        cmdo.run_it_rm(args.container_command, args.mountpoint)
+        cmdo.run_it_rm(args.container_command, args.mountpoint, args.memory)
     elif cmd == 'start':
         cmdo.start()
     elif cmd == 'stop':
