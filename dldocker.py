@@ -118,6 +118,12 @@ def parse_args():
         help='Container mount point in format host_path:container_path.',
     )
     parser_run_jl.add_argument(
+        '-v',
+        '--mountpoints',
+        help='Additional mount points in format host_path:container_path.',
+        nargs='*'
+    )
+    parser_run_jl.add_argument(
         '--notebook-dir',
         help='Path to notebooks directory inside container.',
     )
@@ -127,7 +133,8 @@ def parse_args():
     )
     parser_run_it_rm = parser_cmd.add_parser(
         'run-it-rm',
-        help='Interactively runs specified command in a new container and then deletes container.'
+        help='Interactively runs specified command in a new container and then deletes container. '
+             'Note that you will need to manually stop or exit container if you run bash.'
     )
     parser_run_it_rm.add_argument(
         '--mountpoint',
@@ -248,12 +255,13 @@ docker build \\
     dockercontext
         ''')
 
-    def run_jl(self, autoports=False, mountpoint=None, notebook_dir=None, memory=None):
+    def run_jl(self, autoports=False, mountpoint=None, mountpoints=None, notebook_dir=None, memory=None):
         cfg = self.config
         jl_port, tb_port, sshd_port = self._get_ports(autoports)
         mountpoint = mountpoint or cfg.MOUNTPOINT
         notebook_dir = notebook_dir or cfg.NOTEBOOK_DIR
         memory = f'--memory {memory}' if memory else ''
+        mountpoints = '-v' + '-v '.join(mountpoints) if mountpoints else ''
         self._run(f'''
 nvidia-docker run \\
     -d \\
@@ -262,6 +270,7 @@ nvidia-docker run \\
     --hostname {cfg.HOSTNAME} \\
     --name {cfg.LAB_CONTAINER_NAME} \\
     -v {mountpoint} \\
+    {mountpoints} \\
     -p {jl_port} \\
     -p {tb_port} \\
     -p {sshd_port} \\
@@ -336,7 +345,7 @@ def main(args):
     if cmd == 'build':
         cmdo.build(args.skip_base)
     elif cmd == 'run-jl':
-        cmdo.run_jl(args.autoports, args.mountpoint, args.notebook_dir, args.memory)
+        cmdo.run_jl(args.autoports, args.mountpoint, args.mountpoints, args.notebook_dir, args.memory)
     elif cmd == 'run-it-rm':
         cmdo.run_it_rm(args.container_command, args.mountpoint, args.memory)
     elif cmd == 'start':
