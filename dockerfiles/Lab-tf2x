@@ -48,6 +48,7 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
     bazel build --config=opt --config=cuda //tensorflow/tools/pip_package:build_pip_package && \
     ./bazel-bin/tensorflow/tools/pip_package/build_pip_package /tmp/tensorflow_pkg && \
     $PIP_INSTALL /tmp/tensorflow_pkg/tensorflow*.whl && \
+    cd - && rm -rf /tmp/tensorflow_pkg tensorflow && \
 
 # ==================================================================
 # jupyterlab extensions
