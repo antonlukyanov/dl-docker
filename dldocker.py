@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+from os import path
 from os.path import join
 import re
 import importlib
@@ -98,6 +99,11 @@ def parse_args():
 
     parser_cmd = parser.add_subparsers(dest='command', title='command')
     parser_cmd.required = True
+
+    parser_update_path = parser_cmd.add_parser(
+        'update-path',
+        help='Add path to the directory containing this script to $PATH shell variable.'
+    )
 
     parser_build = parser_cmd.add_parser(
         'build',
@@ -346,33 +352,53 @@ Taken ports: {', '.join(sorted(list(self._taken_ports())))}
         run(f'docker exec -it {self.config.LAB_CONTAINER_NAME} sudo -u master {command or "bash"}')
 
 
+def get_script_dir():
+    return path.dirname(path.realpath(__file__))
+
+
 def change_cwd():
     # Changing current working dir to folder containing this script. Useful if a user wants to
     # run this script from arbitrary directory.
-    os.chdir(os.path.dirname(os.path.realpath(__file__)))
+    os.chdir(get_script_dir())
+
+
+def update_path(dry_run=False):
+    home = run('echo $HOME', stdout=subprocess.PIPE).stdout.strip()
+    for fn in os.listdir(home):
+        if fn == '.bashrc' or fn == '.zshrc':
+            path = f'HOME=$HOME:{get_script_dir()}'
+            with open(join(home, fn), 'a') as file:
+                log(f'Updating {fn}')
+                log(f'Appending {path}')
+                if not dry_run:
+                    file.write(f'\n{path}\n')
+                    file.write('export PATH\n')
 
 
 def main(args):
     cmd = args.command
-    cmdo = Command(process_config(importlib.import_module('configs.' + args.config)), args.dry_run)
-    if cmd == 'build':
-        cmdo.build(args.skip_base, args.no_cache)
-    elif cmd == 'run-jl':
-        cmdo.run_jl(args.autoports, args.mountpoint, args.mountpoints, args.notebook_dir, args.memory)
-    elif cmd == 'run-it-rm':
-        cmdo.run_it_rm(args.container_command, args.mountpoint, args.memory)
-    elif cmd == 'start':
-        cmdo.start()
-    elif cmd == 'stop':
-        cmdo.stop()
-    elif cmd == 'rmc':
-        cmdo.rmc()
-    elif cmd == 'rmi':
-        cmdo.rmi()
-    elif cmd == 'exec':
-        cmdo.exec(args.container_command)
-    elif cmd == 'info':
-        cmdo.info(args.autoports)
+    if cmd == 'update-path':
+        update_path(args.dry_run)
+    else:
+        cmdo = Command(process_config(importlib.import_module('configs.' + args.config)), args.dry_run)
+        if cmd == 'build':
+            cmdo.build(args.skip_base, args.no_cache)
+        elif cmd == 'run-jl':
+            cmdo.run_jl(args.autoports, args.mountpoint, args.mountpoints, args.notebook_dir, args.memory)
+        elif cmd == 'run-it-rm':
+            cmdo.run_it_rm(args.container_command, args.mountpoint, args.memory)
+        elif cmd == 'start':
+            cmdo.start()
+        elif cmd == 'stop':
+            cmdo.stop()
+        elif cmd == 'rmc':
+            cmdo.rmc()
+        elif cmd == 'rmi':
+            cmdo.rmi()
+        elif cmd == 'exec':
+            cmdo.exec(args.container_command)
+        elif cmd == 'info':
+            cmdo.info(args.autoports)
 
 
 if __name__ == '__main__':
