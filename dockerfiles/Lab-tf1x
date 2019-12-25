@@ -20,7 +20,7 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
         scikit-image \
         jupyter \
         jupyterlab \
-        tensorflow-gpu \
+        tensorflow-gpu==1.14.* \
         h5py \
         keras \
         imgaug \

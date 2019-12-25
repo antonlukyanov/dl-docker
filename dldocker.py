@@ -109,6 +109,11 @@ def parse_args():
         help='Skips building of base image.',
         action='store_true'
     )
+    parser_build.add_argument(
+        '--no-cache',
+        help='Do not use cache when building images.',
+        action='store_true'
+    )
     parser_run_jl = parser_cmd.add_parser(
         'run-jl',
         help='Runs a new container and starts jupyterlab with sshd.'
@@ -234,20 +239,22 @@ class Command:
             jl_port, tb_port, sshd_port = self._guess_ports()
             return f'{jl_port}:8888', f'{tb_port}:6006', f'{sshd_port}:22'
 
-    def build(self, skip_base=False):
+    def build(self, skip_base=False, no_cache=False):
         cfg = self.config
+
+        no_cache = '--no-cache' if no_cache else ''
 
         if cfg.BASE_DOCKERFILE:
             if not skip_base:
                 self._run(f'''
-docker build \\
+docker build {no_cache} \\
     -f dockerfiles/{cfg.BASE_DOCKERFILE} \\
     -t {cfg.BASE_IMAGE_NAME} \\
     dockercontext
                 ''')
 
         self._run(f'''
-docker build \\
+docker build {no_cache} \\
     -f dockerfiles/{cfg.LAB_DOCKERFILE} \\
     --build-arg DLD_BASE={cfg.BASE_IMAGE_NAME} \\
     --build-arg DLD_USER={cfg.IMAGE_USER} \\
@@ -343,7 +350,7 @@ def main(args):
     cmd = args.command
     cmdo = Command(process_config(importlib.import_module('configs.' + args.config)), args.dry_run)
     if cmd == 'build':
-        cmdo.build(args.skip_base)
+        cmdo.build(args.skip_base, args.no_cache)
     elif cmd == 'run-jl':
         cmdo.run_jl(args.autoports, args.mountpoint, args.mountpoints, args.notebook_dir, args.memory)
     elif cmd == 'run-it-rm':
