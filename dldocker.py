@@ -346,6 +346,12 @@ Taken ports: {', '.join(sorted(list(self._taken_ports())))}
         run(f'docker exec -it {self.config.LAB_CONTAINER_NAME} sudo -u master {command or "bash"}')
 
 
+def change_cwd():
+    # Changing current working dir to folder containing this script. Useful if a user wants to
+    # run this script from arbitrary directory.
+    os.chdir(os.path.dirname(os.path.realpath(__file__)))
+
+
 def main(args):
     cmd = args.command
     cmdo = Command(process_config(importlib.import_module('configs.' + args.config)), args.dry_run)
@@ -370,4 +376,5 @@ def main(args):
 
 
 if __name__ == '__main__':
+    change_cwd()
     main(parse_args())
