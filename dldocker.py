@@ -274,7 +274,7 @@ docker build {no_cache} \\
         mountpoint = mountpoint or cfg.MOUNTPOINT
         notebook_dir = notebook_dir or cfg.NOTEBOOK_DIR
         memory = f'--memory {memory}' if memory else ''
-        mountpoints = '-v' + '-v '.join(mountpoints) if mountpoints else ''
+        mountpoints = '-v ' + '-v '.join(mountpoints) if mountpoints else ''
         self._run(f'''
 nvidia-docker run \\
     -d \\

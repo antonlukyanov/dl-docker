@@ -21,7 +21,7 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
         jupyter \
         jupyterlab \
         h5py \
-        imgaug \
+        git+https://github.com/aleju/imgaug.git \
         && \
 
 # ==================================================================
@@ -37,18 +37,26 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
 
     $APT_INSTALL unzip && \
 
-    BAZEL_VERSION="0.26.0" && \
+    BAZEL_VERSION="0.27.1" && \
     wget https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-linux-x86_64.sh && \
     chmod +x bazel-${BAZEL_VERSION}-installer-linux-x86_64.sh && \
     ./bazel-${BAZEL_VERSION}-installer-linux-x86_64.sh && \
 
-    git clone https://github.com/tensorflow/tensorflow.git && cd tensorflow && \
-    git checkout v2.0.0 && \
+    git clone https://github.com/tensorflow/tensorflow.git && \
+    cd tensorflow && \
+    git checkout v2.1.0 && \
     TF_NEED_CUDA=1 ./configure && \
     bazel build --config=opt --config=cuda //tensorflow/tools/pip_package:build_pip_package && \
     ./bazel-bin/tensorflow/tools/pip_package/build_pip_package /tmp/tensorflow_pkg && \
-    $PIP_INSTALL /tmp/tensorflow_pkg/tensorflow*.whl && \
-    cd - && rm -rf /tmp/tensorflow_pkg tensorflow && \
+    $PIP_INSTALL /tmp/tensorflow_pkg/tensorflow-*.whl && \
+    cd - && rm -rf /tmp/tensorflow_pkg /root/.cache tensorflow && \
+
+    $PIP_INSTALL \
+        tensorflow-datasets \
+        git+https://github.com/qubvel/classification_models.git \
+        git+https://github.com/qubvel/segmentation_models \
+        git+https://github.com/aleju/imgaug.git \
+        && \
 
 # ==================================================================
 # jupyterlab extensions
@@ -82,6 +90,8 @@ EXPOSE 22
 # ==================================================================
 # config & cleanup
 # ------------------------------------------------------------------
+
+ENV LD_LIBRARY_PATH="/usr/local/cuda/extras/CUPTI/lib64:${LD_LIBRARY_PATH}"
 
 RUN \
     ldconfig && \
