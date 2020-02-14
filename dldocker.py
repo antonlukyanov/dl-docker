@@ -152,6 +152,12 @@ def parse_args():
         help='Container mount point in format host_path:container_path.',
     )
     parser_run_it_rm.add_argument(
+        '-v',
+        '--mountpoints',
+        help='Additional mount points in format host_path:container_path.',
+        nargs='*'
+    )
+    parser_run_it_rm.add_argument(
         'container_command',
         nargs='?'
     )
@@ -274,7 +280,7 @@ docker build {no_cache} \\
         mountpoint = mountpoint or cfg.MOUNTPOINT
         notebook_dir = notebook_dir or cfg.NOTEBOOK_DIR
         memory = f'--memory {memory}' if memory else ''
-        mountpoints = '-v ' + '-v '.join(mountpoints) if mountpoints else ''
+        mountpoints = '-v ' + ' -v '.join(mountpoints) if mountpoints else ''
         self._run(f'''
 nvidia-docker run \\
     -d \\
@@ -298,9 +304,10 @@ nvidia-docker run \\
 docker exec -d {cfg.LAB_CONTAINER_NAME} /usr/sbin/sshd -D
         ''')
 
-    def run_it_rm(self, command=None, mountpoint=None, memory=None):
+    def run_it_rm(self, command=None, mountpoint=None, mountpoints=None, memory=None):
         cfg = self.config
         mountpoint = mountpoint or cfg.MOUNTPOINT
+        mountpoints = '-v ' + ' -v '.join(mountpoints) if mountpoints else ''
         memory = f'--memory {memory}' if memory else ''
         self._run(f'''
 nvidia-docker run \\
@@ -310,6 +317,7 @@ nvidia-docker run \\
     -e DLD_GID=$(id -g) \\
     --hostname {cfg.HOSTNAME} \\
     -v {mountpoint} \\
+    {mountpoints} \\
     --ipc host \\
     {memory} \\
     {cfg.LAB_IMAGE_NAME} \\
@@ -386,7 +394,7 @@ def main(args):
         elif cmd == 'run-jl':
             cmdo.run_jl(args.autoports, args.mountpoint, args.mountpoints, args.notebook_dir, args.memory)
         elif cmd == 'run-it-rm':
-            cmdo.run_it_rm(args.container_command, args.mountpoint, args.memory)
+            cmdo.run_it_rm(args.container_command, args.mountpoint, args.mountpoints, args.memory)
         elif cmd == 'start':
             cmdo.start()
         elif cmd == 'stop':
