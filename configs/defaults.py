@@ -4,7 +4,7 @@
 
 # Base image won't be built if set to None.
 BASE_DOCKERFILE = 'Deepo-py37-cu10'
-LAB_DOCKERFILE = 'Lab-tf1x'
+LAB_DOCKERFILE = 'Lab-tf1'
 
 # Prefix for all images. Image tags will be in format {IMAGE_PREFIX}/{...}:gpu
 IMAGE_PREFIX = 'dld'
@@ -16,12 +16,16 @@ BASE_IMAGE_SUFFIX = None
 
 # {IMAGE_PREFIX}/deepo{LAB_IMAGE_SUFFIX}:gpu
 LAB_IMAGE_NAME = None
-LAB_IMAGE_SUFFIX = '-tf1x'
+LAB_IMAGE_SUFFIX = '-tf1'
 # Automatically generated if set to None.
-# {LAB_CONTAINER_PREFIX}lab{LAB_IMAGE_SUFFIX}
+# {LAB_CONTAINER_PREFIX}lab{LAB_CONTAINER_SUFFIX}
+# E.g. running 'dldocker.py -c tf2 run-jl' will result in container name user-lab-tf2 if current user name is 'user' or
+# running 'dldocker.py -c newproj run-jl' will result in container name user-lab-newproj.
 LAB_CONTAINER_NAME = None
 # Defaults to $(whoami)-.
 LAB_CONTAINER_PREFIX = None
+# Defaults to config file name.
+LAB_CONTAINER_SUFFIX = None
 
 # This user will be created when running container.
 IMAGE_USER = 'master'

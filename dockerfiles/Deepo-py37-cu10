@@ -64,6 +64,7 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
         scikit-learn \
         matplotlib \
         Cython \
+        pydash \
         && \
 
     DEBIAN_FRONTEND=noninteractive $APT_INSTALL \

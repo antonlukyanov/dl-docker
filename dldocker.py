@@ -23,7 +23,7 @@ def log(msg, file=None, time_prefix=True):
         print(msg, file=file)
 
 
-def process_config(config):
+def process_config(config, config_name):
     import configs.defaults as defaults
 
     # Filling defaults for missing keys.
@@ -40,15 +40,20 @@ def process_config(config):
 
     config.LAB_CONTAINER_PREFIX = config.LAB_CONTAINER_PREFIX \
         if config.LAB_CONTAINER_PREFIX \
-        else whoami + '-' if whoami != 'a.lukyanov1' else 'adl-'
+        else whoami + '-'
 
     lab_image_suffix = config.LAB_IMAGE_SUFFIX or ''
+
+    if config.LAB_CONTAINER_SUFFIX:
+        lab_container_suffix = config.LAB_CONTAINER_SUFFIX
+    else:
+        lab_container_suffix = f'-{config_name}'
 
     config.LAB_IMAGE_NAME = config.LAB_IMAGE_NAME or \
         f'{config.IMAGE_PREFIX}/lab{lab_image_suffix}:gpu'
 
     config.LAB_CONTAINER_NAME = config.LAB_CONTAINER_NAME or \
-        f'{config.LAB_CONTAINER_PREFIX}lab{lab_image_suffix}'
+        f'{config.LAB_CONTAINER_PREFIX}lab{lab_container_suffix}'
 
     config.NOTEBOOK_DIR = config.NOTEBOOK_DIR or \
         '/workspace/projects'
@@ -120,6 +125,7 @@ def parse_args():
         help='Do not use cache when building images.',
         action='store_true'
     )
+
     parser_run_jl = parser_cmd.add_parser(
         'run-jl',
         help='Runs a new container and starts jupyterlab with sshd.'
@@ -142,6 +148,7 @@ def parse_args():
         '-m', '--memory',
         help='Memory limit.',
     )
+
     parser_run_it_rm = parser_cmd.add_parser(
         'run-it-rm',
         help='Interactively runs specified command in a new container and then deletes container. '
@@ -165,22 +172,27 @@ def parse_args():
         '-m', '--memory',
         help='Memory limit.',
     )
+
     parser_rmc = parser_cmd.add_parser(
         'rmc',
         help='Removes container.'
     )
+
     parser_rmi = parser_cmd.add_parser(
         'rmi',
         help='Removes image.'
     )
+
     parser_start = parser_cmd.add_parser(
         'start',
         help='Starts existing container.'
     )
+
     parser_stop = parser_cmd.add_parser(
         'stop',
         help='Stops running container.'
     )
+
     parser_exec = parser_cmd.add_parser(
         'exec',
         help='Executes command in a running container. Default command is bash.'
@@ -189,6 +201,7 @@ def parse_args():
         'container_command',
         nargs='?'
     )
+
     parser_info = parser_cmd.add_parser(
         'info',
         help='Prints configuration summary.'
@@ -388,7 +401,8 @@ def main(args):
     if cmd == 'update-path':
         update_path(args.dry_run)
     else:
-        cmdo = Command(process_config(importlib.import_module('configs.' + args.config)), args.dry_run)
+        config = process_config(importlib.import_module('configs.' + args.config), args.config)
+        cmdo = Command(config, args.dry_run)
         if cmd == 'build':
             cmdo.build(args.skip_base, args.no_cache)
         elif cmd == 'run-jl':
