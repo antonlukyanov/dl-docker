@@ -16,15 +16,15 @@ The main idea is that there is a base image and main images based on former. Bui
 
 Currently this repository contains two images (both images come with configured jupyterlab and sshd):
 
-- `Lab-tf1x` with tensorflow 1.x
-- `Lab-tf2x` with nightly build of tensorflow 2
+- `Lab-tf1` with tensorflow 1.x
+- `Lab-tf2` with stable build of tensorflow 2.1
 
 It is also possible to specify base image from docker hub. Example configuration:
 
 ```python
 BASE_IMAGE_NAME = 'ubuntu:18.04'
-LAB_DOCKERFILE = 'Lab-tf1x'
-LAB_IMAGE_SUFFIX = '-ubuntu-tf1x'
+LAB_DOCKERFILE = 'Lab-tf1'
+LAB_IMAGE_SUFFIX = '-ubuntu-tf1'
 ```
 
 ## Main commands
