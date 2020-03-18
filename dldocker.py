@@ -86,7 +86,7 @@ def parse_args():
         '-c',
         '--config',
         help='Configuration contaning image tag, container name and build configuration.',
-        default='tf1x',
+        default='tf2',
         choices=configs
     )
     parser.add_argument(
