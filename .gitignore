@@ -8,3 +8,6 @@ __pycache__/
 
 # virtualenv.
 .venv/
+
+# Tunnels.
+.tunnel-*

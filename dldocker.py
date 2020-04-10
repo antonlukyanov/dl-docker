@@ -207,6 +207,18 @@ def parse_args():
         help='Prints configuration summary.'
     )
 
+    parser_tun_make = parser_cmd.add_parser(
+        'tunnels-make',
+        help='Create SSH tunnels.'
+    )
+    parser_tun_make.add_argument('host')
+
+    parser_tun_kill = parser_cmd.add_parser(
+        'tunnels-kill',
+        help='Kills SSH tunnels.'
+    )
+    parser_tun_kill.add_argument('host')
+
     return parser.parse_args()
 
 
@@ -217,12 +229,14 @@ class Command:
         self.config = config
         self.dry_run = dry_run
 
-    def _run(self, cmd):
+    def _run(self, cmd, silent=False):
         cmd = cmd.strip()
-        log(f'running:\n{cmd}')
+        if not silent:
+            log(f'running:\n{cmd}')
         if not self.dry_run:
             run(cmd)
-        log('finished')
+        if not silent:
+            log('finished')
 
     def _taken_ports(self):
         taken_ports = set()
@@ -372,6 +386,26 @@ Taken ports: {', '.join(sorted(list(self._taken_ports())))}
     def exec(self, command=None):
         run(f'docker exec -it {self.config.LAB_CONTAINER_NAME} sudo -u master {command or "bash"}')
 
+    def tunnels_make(self, host, autoports=False):
+        root_dir = get_script_dir()
+        for name, portpair in zip(['jl', 'tb', 'ssh'], self._get_ports(autoports)):
+            port = portpair.split(':')[0]
+            sn = f'.tunnel-{port}-{name}'
+            socket = join(root_dir, sn)
+            if path.exists(socket):
+                log(f'[warning]: {sn} exists')
+            else:
+                jl_tun = f'{port}:localhost:{port}'
+                self._run(f'ssh -M -S {socket} -fNL {jl_tun} {host}')
+
+    def tunnels_kill(self, host, autoports=False):
+        root_dir = get_script_dir()
+        for name, portpair in zip(['jl', 'tb', 'ssh'], self._get_ports(autoports)):
+            port = portpair.split(':')[0]
+            socket = join(root_dir, f'.tunnel-{port}-{name}')
+            if path.exists(socket):
+                self._run(f'ssh -S {socket} -O exit {host}')
+
 
 def get_script_dir():
     return path.dirname(path.realpath(__file__))
@@ -421,6 +455,10 @@ def main(args):
             cmdo.exec(args.container_command)
         elif cmd == 'info':
             cmdo.info(args.autoports)
+        elif cmd == 'tunnels-make':
+            cmdo.tunnels_make(args.host, args.autoports)
+        elif cmd == 'tunnels-kill':
+            cmdo.tunnels_kill(args.host, args.autoports)
 
 
 if __name__ == '__main__':
