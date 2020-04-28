@@ -148,6 +148,10 @@ def parse_args():
         '-m', '--memory',
         help='Memory limit.',
     )
+    parser_run_jl.add_argument(
+        '-g', '--group',
+        help='Run container with group id instead of $(id -g).',
+    )
 
     parser_run_it_rm = parser_cmd.add_parser(
         'run-it-rm',
@@ -171,6 +175,10 @@ def parse_args():
     parser_run_it_rm.add_argument(
         '-m', '--memory',
         help='Memory limit.',
+    )
+    parser_run_it_rm.add_argument(
+        '-g', '--group',
+        help='Run container with group id instead of $(id -g).',
     )
 
     parser_rmc = parser_cmd.add_parser(
@@ -230,13 +238,15 @@ class Command:
         self.dry_run = dry_run
 
     def _run(self, cmd, silent=False):
+        result = None
         cmd = cmd.strip()
         if not silent:
             log(f'running:\n{cmd}')
         if not self.dry_run:
-            run(cmd)
+            result = run(cmd)
         if not silent:
             log('finished')
+        return result
 
     def _taken_ports(self):
         taken_ports = set()
@@ -301,18 +311,22 @@ docker build {no_cache} \\
     dockercontext
         ''')
 
-    def run_jl(self, autoports=False, mountpoint=None, mountpoints=None, notebook_dir=None, memory=None):
+    def _get_group_id(self, group_name):
+        return run(f'cut -d: -f3 < <(getent group {group_name})', capture_output=True)
+
+    def run_jl(self, autoports=False, mountpoint=None, mountpoints=None, notebook_dir=None, memory=None, group=None):
         cfg = self.config
         jl_port, tb_port, sshd_port = self._get_ports(autoports)
         mountpoint = mountpoint or cfg.MOUNTPOINT
         notebook_dir = notebook_dir or cfg.NOTEBOOK_DIR
         memory = f'--memory {memory}' if memory else ''
         mountpoints = '-v ' + ' -v '.join(mountpoints) if mountpoints else ''
+        group = group or '$(id -g)'
         self._run(f'''
 nvidia-docker run \\
     -d \\
     -e DLD_UID=$(id -u) \\
-    -e DLD_GID=$(id -g) \\
+    -e DLD_GID={group} \\
     --hostname {cfg.HOSTNAME} \\
     --name {cfg.LAB_CONTAINER_NAME} \\
     -v {mountpoint} \\
@@ -331,17 +345,18 @@ nvidia-docker run \\
 docker exec -d {cfg.LAB_CONTAINER_NAME} /usr/sbin/sshd -D
         ''')
 
-    def run_it_rm(self, command=None, mountpoint=None, mountpoints=None, memory=None):
+    def run_it_rm(self, command=None, mountpoint=None, mountpoints=None, memory=None, group=None):
         cfg = self.config
         mountpoint = mountpoint or cfg.MOUNTPOINT
         mountpoints = '-v ' + ' -v '.join(mountpoints) if mountpoints else ''
         memory = f'--memory {memory}' if memory else ''
+        group = group or '$(id -g)'
         self._run(f'''
 nvidia-docker run \\
     -it \\
     --rm \\
     -e DLD_UID=$(id -u) \\
-    -e DLD_GID=$(id -g) \\
+    -e DLD_GID={group} \\
     --hostname {cfg.HOSTNAME} \\
     -v {mountpoint} \\
     {mountpoints} \\
@@ -384,7 +399,7 @@ Taken ports: {', '.join(sorted(list(self._taken_ports())))}
         '''.strip())
 
     def exec(self, command=None):
-        run(f'docker exec -it {self.config.LAB_CONTAINER_NAME} sudo -u master {command or "bash"}')
+        self._run(f'docker exec -it {self.config.LAB_CONTAINER_NAME} sudo -u master {command or "bash"}')
 
     def tunnels_make(self, host, autoports=False):
         root_dir = get_script_dir()
@@ -396,15 +411,18 @@ Taken ports: {', '.join(sorted(list(self._taken_ports())))}
                 log(f'[warning]: {sn} exists')
             else:
                 jl_tun = f'{port}:localhost:{port}'
-                self._run(f'ssh -M -S {socket} -fNL {jl_tun} {host}')
+                self._run(f'ssh -M -S {socket} -fNL {jl_tun} {host}', silent=True)
+                log(f'[info]: created {sn}')
 
     def tunnels_kill(self, host, autoports=False):
         root_dir = get_script_dir()
         for name, portpair in zip(['jl', 'tb', 'ssh'], self._get_ports(autoports)):
             port = portpair.split(':')[0]
-            socket = join(root_dir, f'.tunnel-{port}-{name}')
+            sn = f'.tunnel-{port}-{name}'
+            socket = join(root_dir, sn)
             if path.exists(socket):
-                self._run(f'ssh -S {socket} -O exit {host}')
+                self._run(f'ssh -S {socket} -O exit {host}', silent=True)
+                log(f'[info]: closed {sn}')
 
 
 def get_script_dir():
@@ -440,9 +458,9 @@ def main(args):
         if cmd == 'build':
             cmdo.build(args.skip_base, args.no_cache)
         elif cmd == 'run-jl':
-            cmdo.run_jl(args.autoports, args.mountpoint, args.mountpoints, args.notebook_dir, args.memory)
+            cmdo.run_jl(args.autoports, args.mountpoint, args.mountpoints, args.notebook_dir, args.memory, args.group)
         elif cmd == 'run-it-rm':
-            cmdo.run_it_rm(args.container_command, args.mountpoint, args.mountpoints, args.memory)
+            cmdo.run_it_rm(args.container_command, args.mountpoint, args.mountpoints, args.memory, args.group)
         elif cmd == 'start':
             cmdo.start()
         elif cmd == 'stop':
