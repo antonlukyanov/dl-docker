@@ -169,16 +169,20 @@ def parse_args():
         nargs='*'
     )
     parser_run_it_rm.add_argument(
-        'container_command',
-        nargs='?'
-    )
-    parser_run_it_rm.add_argument(
         '-m', '--memory',
         help='Memory limit.',
     )
     parser_run_it_rm.add_argument(
         '-g', '--group',
         help='Run container with group id instead of $(id -g).',
+    )
+    parser_run_it_rm.add_argument(
+        '-n', '--name',
+        help='Container name.',
+    )
+    parser_run_it_rm.add_argument(
+        'container_command',
+        nargs='?'
     )
 
     parser_rmc = parser_cmd.add_parser(
@@ -345,12 +349,13 @@ nvidia-docker run \\
 docker exec -d {cfg.LAB_CONTAINER_NAME} /usr/sbin/sshd -D
         ''')
 
-    def run_it_rm(self, command=None, mountpoint=None, mountpoints=None, memory=None, group=None):
+    def run_it_rm(self, command=None, mountpoint=None, mountpoints=None, memory=None, group=None, container_name=None):
         cfg = self.config
         mountpoint = mountpoint or cfg.MOUNTPOINT
         mountpoints = '-v ' + ' -v '.join(mountpoints) if mountpoints else ''
         memory = f'--memory {memory}' if memory else ''
         group = group or '$(id -g)'
+        container_name = f'--name {container_name}' or ''
         self._run(f'''
 nvidia-docker run \\
     -it \\
@@ -358,6 +363,7 @@ nvidia-docker run \\
     -e DLD_UID=$(id -u) \\
     -e DLD_GID={group} \\
     --hostname {cfg.HOSTNAME} \\
+    {container_name} \\
     -v {mountpoint} \\
     {mountpoints} \\
     --ipc host \\
@@ -460,7 +466,8 @@ def main(args):
         elif cmd == 'run-jl':
             cmdo.run_jl(args.autoports, args.mountpoint, args.mountpoints, args.notebook_dir, args.memory, args.group)
         elif cmd == 'run-it-rm':
-            cmdo.run_it_rm(args.container_command, args.mountpoint, args.mountpoints, args.memory, args.group)
+            cmdo.run_it_rm(args.container_command, args.mountpoint, args.mountpoints,
+                           args.memory, args.group, args.container_name)
         elif cmd == 'start':
             cmdo.start()
         elif cmd == 'stop':

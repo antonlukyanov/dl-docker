@@ -23,8 +23,27 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
         tensorflow-gpu==1.14.* \
         h5py \
         keras \
-        imgaug \
+        pycocotools \
+        git+https://github.com/qubvel/classification_models.git \
+        git+https://github.com/qubvel/segmentation_models \
+        git+https://github.com/aleju/imgaug.git \
+        tensorflow-datasets \
         && \
+
+# ==================================================================
+# GDAL
+# ------------------------------------------------------------------
+
+    add-apt-repository -y ppa:ubuntugis/ppa && \
+    apt-get update && \
+    DEBIAN_FRONTEND=noninteractive $APT_INSTALL \
+        gdal-bin \
+        libgdal-dev \
+    && \
+
+    $PIP_INSTALL \
+        GDAL==2.4.0 \
+    && \
 
 # ==================================================================
 # jupyterlab extensions
