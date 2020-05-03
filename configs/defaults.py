@@ -7,7 +7,8 @@ BASE_DOCKERFILE = 'Deepo-py37-cu10'
 LAB_DOCKERFILE = 'Lab-tf2'
 
 # Prefix for all images. Image tags will be in format {IMAGE_PREFIX}/{...}:gpu
-IMAGE_PREFIX = 'dld'
+# Uses current user name by default.
+IMAGE_PREFIX = None
 
 # Resulting names after build. Automatically generated if set to None.
 # {IMAGE_PREFIX}/base{BASE_IMAGE_SUFFIX}:gpu

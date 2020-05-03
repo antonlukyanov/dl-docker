@@ -33,10 +33,12 @@ def process_config(config, config_name):
 
     whoami = run('whoami', stdout=subprocess.PIPE).stdout.strip() or ''
 
+    image_prefix = config.IMAGE_PREFIX or whoami
+
     base_image_suffix = config.BASE_IMAGE_SUFFIX or ''
 
     config.BASE_IMAGE_NAME = config.BASE_IMAGE_NAME or \
-        f'{config.IMAGE_PREFIX}/base{base_image_suffix}:gpu'
+        f'{image_prefix}/base{base_image_suffix}:gpu'
 
     config.LAB_CONTAINER_PREFIX = config.LAB_CONTAINER_PREFIX \
         if config.LAB_CONTAINER_PREFIX \
@@ -50,7 +52,7 @@ def process_config(config, config_name):
         lab_container_suffix = f'-{config_name}'
 
     config.LAB_IMAGE_NAME = config.LAB_IMAGE_NAME or \
-        f'{config.IMAGE_PREFIX}/lab{lab_image_suffix}:gpu'
+        f'{image_prefix}/lab{lab_image_suffix}:gpu'
 
     config.LAB_CONTAINER_NAME = config.LAB_CONTAINER_NAME or \
         f'{config.LAB_CONTAINER_PREFIX}lab{lab_container_suffix}'
@@ -121,8 +123,8 @@ def parse_args():
         action='store_true'
     )
     parser_build.add_argument(
-        '--no-cache',
-        help='Do not use cache when building images.',
+        '--use-cache',
+        help='Use cache when building images.',
         action='store_true'
     )
 
@@ -462,7 +464,7 @@ def main(args):
         config = process_config(importlib.import_module('configs.' + args.config), args.config)
         cmdo = Command(config, args.dry_run)
         if cmd == 'build':
-            cmdo.build(args.skip_base, args.no_cache)
+            cmdo.build(args.skip_base, not args.use_cache)
         elif cmd == 'run-jl':
             cmdo.run_jl(args.autoports, args.mountpoint, args.mountpoints, args.notebook_dir, args.memory, args.group)
         elif cmd == 'run-it-rm':
