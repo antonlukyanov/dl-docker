@@ -56,14 +56,14 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
 
     $APT_INSTALL unzip && \
 
-    BAZEL_VERSION="0.27.1" && \
+    BAZEL_VERSION="2.0.0" && \
     wget https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-linux-x86_64.sh && \
     chmod +x bazel-${BAZEL_VERSION}-installer-linux-x86_64.sh && \
     ./bazel-${BAZEL_VERSION}-installer-linux-x86_64.sh && \
 
     git clone https://github.com/tensorflow/tensorflow.git && \
     cd tensorflow && \
-    git checkout v2.1.0 && \
+    git checkout v2.2.0 && \
     TF_NEED_CUDA=1 ./configure && \
     bazel build --config=opt --config=cuda //tensorflow/tools/pip_package:build_pip_package && \
     ./bazel-bin/tensorflow/tools/pip_package/build_pip_package /tmp/tensorflow_pkg && \
