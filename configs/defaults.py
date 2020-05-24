@@ -43,6 +43,7 @@ HOSTNAME = 'dl-server'
 NOTEBOOK_DIR = '/workspace/projects'
 # HOST_DIR:CONTAINER_DIR
 MOUNTPOINT = '$HOME/projects:/workspace/projects'
+WORKDIR = '/workspace/projects'
 # HOST_PORT:CONTAINER_PORT
 JUPYTERLAB_PORT = '9000:8888'
 TENSORBOARD_PORT = '9001:6006'

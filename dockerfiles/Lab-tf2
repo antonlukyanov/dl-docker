@@ -25,6 +25,7 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
         git+https://github.com/qubvel/classification_models.git \
         git+https://github.com/qubvel/segmentation_models \
         git+https://github.com/aleju/imgaug.git \
+        slackclient \
         tensorflow-datasets \
         && \
 
