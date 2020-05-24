@@ -6,7 +6,7 @@ If you work on a server where you do not have normal root access, then running d
 
 - `./dldocker.py build` if image hasn't been built
 - `./dldocker.py run-jl --autoports` to run jupyterlab and sshd in detached mode with automatically selected ports
-- `./dldocker.py run-it-rm --mountpoint /host/dir:/container/dir bash` to run command in a new unnamed container and delete container when it stops
+- `./dldocker.py run-it --rm --mountpoint /host/dir:/container/dir bash` to run command in a new unnamed container and delete container when it stops
 
 When user runs a container, a new `master` user is automatically created inside the container and associated with the host user. It is also possible and quite easy to execute a command inside running container with `./dldocker.py execute python3`, which will be executed under correct user and permissions.
 
@@ -17,7 +17,7 @@ The main idea is that there is a base image and main images based on former. Bui
 Currently this repository contains two images (both images come with configured jupyterlab and sshd):
 
 - `Lab-tf1` with tensorflow 1.x
-- `Lab-tf2` with stable build of tensorflow 2.1
+- `Lab-tf2` with stable build of tensorflow 2.2
 
 It is also possible to specify base image from docker hub. Example configuration:
 
@@ -35,7 +35,7 @@ Note that `dldocker.py` accepts `--config` option where you specify configuratio
 - `run-jl`: creates and runs a new detached container with preconfigured jupyterlab and sshd (login/password is master/master) which can be used for remote python configuration in PyCharm. `$HOME/projects` is mounted to `/workspace/projects` and notebooks are served from `/workspace/projects` folder.
 - `start`: starts stopped container created with `run-jl`.
 - `stop`: stops the container created with `run-jl`.
-- `run-it-rm`: interactively runs specified command in a new container and deletes container when it stops.
+- `run-it`: interactively runs specified command in a new container.
 - `exec`: executes specified command in running container.
 
 Run `dldocker.py -h` for more detailed information.
