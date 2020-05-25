@@ -188,6 +188,10 @@ def parse_args():
         action='store_true'
     )
     parser_run_it.add_argument(
+        '-w', '--workdir',
+        help='Working directory inside container.'
+    )
+    parser_run_it.add_argument(
         'container_command',
         nargs='?'
     )
@@ -215,6 +219,10 @@ def parse_args():
     parser_exec = parser_cmd.add_parser(
         'exec',
         help='Executes command in a running container. Default command is bash.'
+    )
+    parser_exec.add_argument(
+        '-w', '--workdir',
+        help='Working directory inside container.'
     )
     parser_exec.add_argument(
         'container_command',
@@ -358,7 +366,7 @@ docker exec -d {cfg.LAB_CONTAINER_NAME} /usr/sbin/sshd -D
         ''')
 
     def run_it(self, command=None, mountpoint=None, mountpoints=None,
-               memory=None, group=None, container_name=None, rm=False):
+               memory=None, group=None, container_name=None, rm=False, workdir=None):
         cfg = self.config
         mountpoint = mountpoint or cfg.MOUNTPOINT
         mountpoints = '-v ' + ' -v '.join(mountpoints) if mountpoints else ''
@@ -366,6 +374,7 @@ docker exec -d {cfg.LAB_CONTAINER_NAME} /usr/sbin/sshd -D
         group = group or '$(id -g)'
         container_name = f'--name {container_name}' or ''
         rm = '--rm' if rm else ''
+        workdir = workdir or cfg.WORKDIR
         self._run(f'''
 nvidia-docker run \\
     -it \\
@@ -376,7 +385,7 @@ nvidia-docker run \\
     {container_name} \\
     -v {mountpoint} \\
     {mountpoints} \\
-    -w {cfg.WORKDIR} \\
+    -w {workdir} \\
     --ipc host \\
     {memory} \\
     {cfg.LAB_IMAGE_NAME} \\
@@ -415,10 +424,11 @@ Conflicting ports: {', '.join(self._conflicting_ports([jl_port, tb_port, sshd_po
 Taken ports: {', '.join(sorted(list(self._taken_ports())))}
         '''.strip())
 
-    def exec(self, command=None):
+    def exec(self, command=None, workdir=None):
+        workdir = workdir or self.config.WORKDIR
         self._run(f'''
 docker exec \\
-    -w {self.config.WORKDIR} \\
+    -w {workdir} \\
     -it {self.config.LAB_CONTAINER_NAME} sudo -u master {command or "bash"}
         ''')
 
@@ -482,7 +492,7 @@ def main(args):
             cmdo.run_jl(args.autoports, args.mountpoint, args.mountpoints, args.notebook_dir, args.memory, args.group)
         elif cmd == 'run-it':
             cmdo.run_it(args.container_command, args.mountpoint, args.mountpoints,
-                        args.memory, args.group, args.container_name, args.rm)
+                        args.memory, args.group, args.container_name, args.rm, args.workdir)
         elif cmd == 'start':
             cmdo.start()
         elif cmd == 'stop':
@@ -492,7 +502,7 @@ def main(args):
         elif cmd == 'rmi':
             cmdo.rmi()
         elif cmd == 'exec':
-            cmdo.exec(args.container_command)
+            cmdo.exec(args.container_command, args.workdir)
         elif cmd == 'info':
             cmdo.info(args.autoports)
         elif cmd == 'tunnels-make':
