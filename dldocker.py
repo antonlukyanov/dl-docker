@@ -149,6 +149,7 @@ def parse_args():
     parser_run_jl.add_argument(
         '-m', '--memory',
         help='Memory limit.',
+        default='32g'
     )
     parser_run_jl.add_argument(
         '-g', '--group',
@@ -172,6 +173,7 @@ def parse_args():
     parser_run_it.add_argument(
         '-m', '--memory',
         help='Memory limit.',
+        default='32g'
     )
     parser_run_it.add_argument(
         '-g', '--group',

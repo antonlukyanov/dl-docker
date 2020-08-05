@@ -15,6 +15,7 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
 # ------------------------------------------------------------------
 
     $PIP_INSTALL \
+        tabulate \
         tqdm \
         click \
         scikit-image \
@@ -27,6 +28,11 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
         git+https://github.com/aleju/imgaug.git \
         slackclient \
         tensorflow-datasets \
+        omegaconf \
+        && \
+
+    $PIP_INSTALL --pre \
+        hydra-core \
         && \
 
 # ==================================================================
@@ -49,7 +55,7 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
 # ------------------------------------------------------------------
 
     $PIP_INSTALL \
-        -U six numpy wheel setuptools mock 'future>=0.17.1' \
+        -U six 'numpy<1.19.0' wheel setuptools mock 'future>=0.17.1' \
         && \
     $PIP_INSTALL \
         -U keras_applications keras_preprocessing --no-deps \
@@ -57,14 +63,14 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
 
     $APT_INSTALL unzip && \
 
-    BAZEL_VERSION="2.0.0" && \
+    BAZEL_VERSION="3.1.0" && \
     wget https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-linux-x86_64.sh && \
     chmod +x bazel-${BAZEL_VERSION}-installer-linux-x86_64.sh && \
     ./bazel-${BAZEL_VERSION}-installer-linux-x86_64.sh && \
 
     git clone https://github.com/tensorflow/tensorflow.git && \
     cd tensorflow && \
-    git checkout v2.2.0 && \
+    git checkout v2.3.0 && \
     TF_NEED_CUDA=1 ./configure && \
     bazel build --config=opt --config=cuda //tensorflow/tools/pip_package:build_pip_package && \
     ./bazel-bin/tensorflow/tools/pip_package/build_pip_package /tmp/tensorflow_pkg && \

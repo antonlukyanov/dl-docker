@@ -15,6 +15,7 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
 # ------------------------------------------------------------------
 
     $PIP_INSTALL \
+        tabulate \
         tqdm \
         click \
         scikit-image \
@@ -28,6 +29,12 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
         git+https://github.com/qubvel/segmentation_models \
         git+https://github.com/aleju/imgaug.git \
         tensorflow-datasets \
+        omegaconf \
+        'numpy<1.19.0' \
+        && \
+
+    $PIP_INSTALL --pre \
+        hydra-core \
         && \
 
 # ==================================================================
