@@ -23,12 +23,9 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
         jupyterlab \
         h5py \
         pycocotools \
-        git+https://github.com/qubvel/classification_models.git \
-        git+https://github.com/qubvel/segmentation_models \
-        git+https://github.com/aleju/imgaug.git \
         slackclient \
-        tensorflow-datasets \
         omegaconf \
+        lxml \
         && \
 
     $PIP_INSTALL --pre \
@@ -70,7 +67,7 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
 
     git clone https://github.com/tensorflow/tensorflow.git && \
     cd tensorflow && \
-    git checkout v2.3.0 && \
+    git checkout v2.3.1 && \
     TF_NEED_CUDA=1 ./configure && \
     bazel build --config=opt --config=cuda //tensorflow/tools/pip_package:build_pip_package && \
     ./bazel-bin/tensorflow/tools/pip_package/build_pip_package /tmp/tensorflow_pkg && \
@@ -79,6 +76,7 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
 
     $PIP_INSTALL \
         tensorflow-datasets \
+        tensorflow-addons \
         git+https://github.com/qubvel/classification_models.git \
         git+https://github.com/qubvel/segmentation_models \
         git+https://github.com/aleju/imgaug.git \

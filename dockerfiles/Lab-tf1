@@ -30,6 +30,7 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
         git+https://github.com/aleju/imgaug.git \
         tensorflow-datasets \
         omegaconf \
+        lxml \
         'numpy<1.19.0' \
         && \
 
