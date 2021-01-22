@@ -112,7 +112,7 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
 # nodejs
 # ------------------------------------------------------------------
 
-    curl -sL https://deb.nodesource.com/setup_10.x -o /tmp/nodesource_setup.sh && \
+    curl -sL https://deb.nodesource.com/setup_12.x -o /tmp/nodesource_setup.sh && \
     bash /tmp/nodesource_setup.sh && \
     DEBIAN_FRONTEND=noninteractive $APT_INSTALL nodejs && \
 
