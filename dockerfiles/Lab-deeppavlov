@@ -1,0 +1,112 @@
+ARG DLD_BASE
+FROM $DLD_BASE
+
+ARG DLD_USER=master
+ENV DLD_USER $DLD_USER
+ENV TF_ENABLE_AUTO_MIXED_PRECISION 1
+
+RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
+    PIP_INSTALL="python -m pip --no-cache-dir install --upgrade" && \
+    GIT_CLONE="git clone --depth 10" && \
+    apt-get update && \
+
+# ==================================================================
+# python
+# ------------------------------------------------------------------
+
+    $PIP_INSTALL \
+        tabulate \
+        tqdm \
+        click \
+        scikit-image \
+        jupyter \
+        jupyterlab \
+        tensorflow-gpu==1.15.2 \
+        h5py \
+        keras \
+        pycocotools \
+        git+https://github.com/qubvel/classification_models.git \
+        git+https://github.com/qubvel/segmentation_models \
+        git+https://github.com/aleju/imgaug.git \
+        tensorflow-datasets \
+        omegaconf \
+        lxml \
+        'numpy<1.19.0' \
+        deeppavlov \
+        && \
+
+    $PIP_INSTALL --pre \
+        hydra-core \
+        && \
+
+    python -m deeppavlov install squad_bert && \
+
+# ==================================================================
+# GDAL
+# ------------------------------------------------------------------
+
+    add-apt-repository -y ppa:ubuntugis/ppa && \
+    apt-get update && \
+    DEBIAN_FRONTEND=noninteractive $APT_INSTALL \
+        gdal-bin \
+        libgdal-dev \
+    && \
+
+    $PIP_INSTALL \
+        GDAL==2.4.0 \
+    && \
+
+# ==================================================================
+# jupyterlab extensions
+# ------------------------------------------------------------------
+
+    jupyter labextension install @jupyterlab/toc && \
+    jupyter labextension install @krassowski/jupyterlab_go_to_definition && \
+
+# ==================================================================
+# sshd
+# ------------------------------------------------------------------
+
+    DEBIAN_FRONTEND=noninteractive $APT_INSTALL \
+        openssh-server sudo \
+        && \
+    mkdir \
+        /var/run/sshd \
+        && \
+    sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd \
+        && \
+    echo "export VISIBLE=now" >> /etc/profile \
+        && \
+    echo "$DLD_USER ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/$DLD_USER \
+        && \
+    chmod 0440 /etc/sudoers.d/$DLD_USER
+
+ENV NOTVISIBLE "in users profile"
+
+EXPOSE 22
+
+# ==================================================================
+# config & cleanup
+# ------------------------------------------------------------------
+
+RUN \
+    ldconfig && \
+    apt-get clean && \
+    apt-get autoremove && \
+    rm -rf /var/lib/apt/lists/* /tmp/*
+
+# 8888 - Jupyterlab
+# 6006 - TensorBoard
+EXPOSE 8888 6006
+
+# ==================================================================
+# user
+# ------------------------------------------------------------------
+
+ENV HOME=/home/$DLD_USER
+WORKDIR $HOME
+VOLUME /home/$DLD_USER
+
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

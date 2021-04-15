@@ -3,7 +3,7 @@
 #
 
 # Base image won't be built if set to None.
-BASE_DOCKERFILE = 'Deepo-py37-cu10'
+BASE_DOCKERFILE = 'Deepo-py38-cu10'
 LAB_DOCKERFILE = 'Lab-tf2'
 
 # Prefix for all images. Image tags will be in format {IMAGE_PREFIX}/{...}:gpu
