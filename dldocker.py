@@ -155,6 +155,12 @@ def parse_args():
         '-g', '--group',
         help='Run container with group id instead of $(id -g).',
     )
+    parser_run_jl.add_argument(
+        '--python_buffer',
+        help='Run container with buffering python logs',
+        type=int,
+        default=1
+    )
 
     parser_run_it = parser_cmd.add_parser(
         'run-it',
@@ -335,7 +341,7 @@ docker build {no_cache} \\
     def _get_group_id(self, group_name):
         return run(f'cut -d: -f3 < <(getent group {group_name})', capture_output=True)
 
-    def run_jl(self, autoports=False, mountpoint=None, mountpoints=None, notebook_dir=None, memory=None, group=None):
+    def run_jl(self, autoports=False, mountpoint=None, mountpoints=None, notebook_dir=None, memory=None, group=None, python_buffer=None):
         cfg = self.config
         jl_port, tb_port, sshd_port = self._get_ports(autoports)
         mountpoint = mountpoint or cfg.MOUNTPOINT
@@ -343,11 +349,13 @@ docker build {no_cache} \\
         memory = f'--memory {memory}' if memory else ''
         mountpoints = '-v ' + ' -v '.join(mountpoints) if mountpoints else ''
         group = group or '$(id -g)'
+        python_buffer = python_buffer if python_buffer else 1
         self._run(f'''
 nvidia-docker run \\
     -d \\
     -e DLD_UID=$(id -u) \\
     -e DLD_GID={group} \\
+    -e PYTHONUNBUFFERED={python_buffer} \\
     --hostname {cfg.HOSTNAME} \\
     --name {cfg.LAB_CONTAINER_NAME} \\
     -v {mountpoint} \\
